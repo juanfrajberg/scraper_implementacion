@@ -1,0 +1,6 @@
+twikit
+python-dotenv
+pandas
+networkx
+matplotlib
+jupyterlab
