@@ -98,7 +98,7 @@ def save_jsonl(path: Path, data: list[dict], key: str):
 
 
 def get_existing_conversation_ids(path: Path) -> set[str]:
-    """Obtiene los IDs de conversaciones que ya fueron guardadas."""
+    """Obtiene los IDs de conversaciones ya guardadas."""
 
     existing = set()
 
@@ -109,7 +109,10 @@ def get_existing_conversation_ids(path: Path) -> set[str]:
         for line in file:
             try:
                 item = json.loads(line)
-                conversation_id = item.get("conversation_id")
+
+                conversation_id = item.get(
+                    "conversation_id"
+                )
 
                 if conversation_id is not None:
                     existing.add(str(conversation_id))
@@ -119,13 +122,37 @@ def get_existing_conversation_ids(path: Path) -> set[str]:
 
     return existing
 
+
+def deduplicate_thread(thread):
+    """
+    Elimina tweets duplicados de un thread
+    conservando el primer registro de cada tweet.
+    """
+
+    unique = []
+    seen_ids = set()
+
+    for tweet in thread:
+        tweet_id = str(tweet.id)
+
+        if tweet_id in seen_ids:
+            continue
+
+        seen_ids.add(tweet_id)
+        unique.append(tweet)
+
+    unique.sort(key=lambda tweet: tweet.date)
+
+    return unique
+
+
 async def collect_tweets(
     api: API,
     query: str,
     limit: int = 100,
 ):
     """
-    Busca tweets, guarda los tweets individuales
+    Busca tweets, guarda los tweets encontrados
     y reconstruye las conversaciones.
     """
 
@@ -147,6 +174,7 @@ async def collect_tweets(
     print(
         f"Tweets encontrados: {len(tweets)}"
     )
+
     # ---------------------------------------------------------
     # 1. Guardar tweets encontrados
     # ---------------------------------------------------------
@@ -162,10 +190,12 @@ async def collect_tweets(
         key="tweet_id",
     )
 
-    print(f"Tweets guardados en: {TWEETS_FILE}")
+    print(
+        f"Tweets guardados en: {TWEETS_FILE}"
+    )
 
     # ---------------------------------------------------------
-    # 2. Agrupar tweets por conversación
+    # 2. Agrupar por conversación
     # ---------------------------------------------------------
 
     conversations = {}
@@ -176,21 +206,26 @@ async def collect_tweets(
         if conversation_id is None:
             continue
 
-        conversation_id = str(conversation_id)
+        conversation_id = str(
+            conversation_id
+        )
 
         if conversation_id not in conversations:
             conversations[conversation_id] = tweet
 
     print(
-        f"Conversaciones únicas: {len(conversations)}"
+        f"Conversaciones únicas: "
+        f"{len(conversations)}"
     )
 
     # ---------------------------------------------------------
-    # 3. Reconstruir conversaciones nuevas
+    # 3. Conversaciones ya existentes
     # ---------------------------------------------------------
 
-    existing_conversations = get_existing_conversation_ids(
-        THREADS_FILE
+    existing_conversations = (
+        get_existing_conversation_ids(
+            THREADS_FILE
+        )
     )
 
     print(
@@ -198,42 +233,76 @@ async def collect_tweets(
         f"{len(existing_conversations)}"
     )
 
+    # ---------------------------------------------------------
+    # 4. Reconstruir conversaciones nuevas
+    # ---------------------------------------------------------
+
     threads_data = []
 
-    for conversation_id, tweet in conversations.items():
-		
+    for conversation_id, root_tweet in conversations.items():
+
         if conversation_id in existing_conversations:
             print(
                 f"Conversación {conversation_id} "
                 f"ya existe. Se omite."
             )
             continue
-    
+
         print(
             f"Reconstruyendo conversación "
             f"{conversation_id}..."
         )
-    
+
         thread = await reconstruct_thread(
             api,
             conversation_id,
         )
-    
+
         if not thread:
             continue
-    
+
+        # -----------------------------------------------------
+        # Deduplicar
+        # -----------------------------------------------------
+
+        thread = deduplicate_thread(thread)
+
+        # -----------------------------------------------------
+        # Asegurar que el tweet raíz esté incluido
+        # -----------------------------------------------------
+
+        root_id = str(root_tweet.id)
+
+        thread_ids = {
+            str(tweet.id)
+            for tweet in thread
+        }
+
+        if root_id not in thread_ids:
+            thread.insert(
+                0,
+                root_tweet,
+            )
+
         thread_data = {
             "conversation_id": conversation_id,
             "tweets": [
-            tweet_to_dict(item)
-            for item in thread
+                tweet_to_dict(tweet)
+                for tweet in thread
             ],
         }
 
-        threads_data.append(thread_data)
+        threads_data.append(
+            thread_data
+        )
+
+        print(
+            f"Thread {conversation_id}: "
+            f"{len(thread)} tweets"
+        )
 
     # ---------------------------------------------------------
-    # 4. Guardar conversaciones
+    # 5. Guardar threads
     # ---------------------------------------------------------
 
     save_jsonl(
@@ -242,6 +311,9 @@ async def collect_tweets(
         key="conversation_id",
     )
 
-    print(f"Hilos guardados en: {THREADS_FILE}")
+    print(
+        f"Hilos guardados en: "
+        f"{THREADS_FILE}"
+    )
 
     return len(tweets)

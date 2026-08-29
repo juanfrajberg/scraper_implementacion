@@ -7,15 +7,21 @@ async def reconstruct_thread(
     limit: int = 500,
 ):
     """
-    Recupera una conversación usando tweet_thread().
+    Recupera una conversación usando tweet_thread(),
+    eliminando tweets duplicados.
     """
 
     thread = []
+    seen_ids = set()
 
     async for tweet in api.tweet_thread(
         int(tweet_id),
         limit=limit,
     ):
+        if tweet.id in seen_ids:
+            continue
+
+        seen_ids.add(tweet.id)
         thread.append(tweet)
 
     if not thread:
