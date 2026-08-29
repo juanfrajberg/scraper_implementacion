@@ -11,8 +11,9 @@ env/
 # Environment variables
 .env
 
-# Twikit authentication
-cookies.json
+# TWScrape authentication
+data/accounts.db
+data/*
 
 # Raw data
 data/raw/*

@@ -1,4 +1,4 @@
-twikit
+twscrape
 python-dotenv
 pandas
 networkx

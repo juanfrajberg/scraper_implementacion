@@ -1,144 +1,40 @@
 # Análisis de conversaciones sobre Argentina en X
 
-Proyecto académico de **recolección, procesamiento y análisis de publicaciones públicas de X (Twitter)** relacionadas con Argentina durante la final de 2026.
+Proyecto académico de **recolección y análisis de publicaciones públicas de X (Twitter)** relacionadas con Argentina durante un período determinado.
 
-El proyecto utiliza **Python y herramientas FOSS** para construir un dataset estructurado que posteriormente puede analizarse mediante expresiones regulares, análisis temporal, análisis de redes y visualización de grafos.
-
----
-
-# Descripción del proyecto
-
-Este proyecto implementa un pipeline de recolección y análisis de publicaciones públicas de X (Twitter), utilizando Python y Twikit, con fines académicos y de investigación.
-
-El sistema permite realizar búsquedas dentro de una ventana temporal determinada, recolectar publicaciones relacionadas con consultas específicas y almacenar información estructurada sobre cada publicación, incluyendo autor, fecha, contenido, likes, retweets, respuestas, citas y datos de conversación.
-
-El flujo general del proyecto es:
-
-X (Twitter)
-     │
-     ▼
-Recolección mediante Twikit
-     │
-     ▼
-Datos RAW (JSONL)
-     │
-     ▼
-Procesamiento y SQLite
-     │
-     ├──────────────┬──────────────┐
-     ▼              ▼              ▼
-Análisis textual   Análisis       Análisis
-   (Regex)         temporal       de redes
-                                    │
-                                    ▼
-                                  Grafo
-
-Los datos recolectados se conservan inicialmente en formato RAW, permitiendo reproducir diferentes etapas de procesamiento sin necesidad de realizar nuevamente la recolección. Posteriormente, los datos se normalizan y almacenan en SQLite para facilitar consultas y análisis.
-
-El proyecto también permite reconstruir relaciones entre publicaciones y usuarios —por ejemplo, respuestas, menciones y citas— para generar posteriormente representaciones de red mediante NetworkX y Gephi.
-
-La recolección se realiza utilizando una única cuenta, respetando los límites y mecanismos de control establecidos por la plataforma. En caso de alcanzarse un límite de solicitudes, el proceso se pausa y reanuda cuando sea posible continuar.
-
-El objetivo final es obtener un dataset reproducible que permita estudiar la evolución temporal, el contenido y la estructura de las conversaciones relacionadas con Argentina durante el período seleccionado.
+El proyecto utiliza **Python** y **twscrape** para realizar búsquedas, almacenar tweets en formato JSONL y reconstruir las conversaciones asociadas a los tweets encontrados.
 
 ---
 
-# Objetivos
+# Objetivo
 
-El objetivo principal es construir un pipeline reproducible para estudiar conversaciones relacionadas con Argentina durante un evento deportivo.
+El objetivo principal es construir un pipeline reproducible para recolectar publicaciones públicas de X y estudiar:
 
-El proyecto busca recolectar y analizar:
+* publicaciones relacionadas con Argentina;
+* autores y fechas de publicación;
+* interacciones entre publicaciones;
+* conversaciones y respuestas;
+* estructura temporal de las conversaciones.
 
-* publicaciones;
-* autores;
-* fechas y horarios;
-* cantidad de likes;
-* cantidad de retweets;
-* cantidad de respuestas;
-* cantidad de citas;
-* visualizaciones, cuando estén disponibles;
-* identificadores de conversación;
-* relaciones de respuesta;
-* menciones;
-* hashtags;
-* contenido textual.
-
-A partir de estos datos se pretende estudiar:
-
-1. **Actividad temporal**
-2. **Contenido textual**
-3. **Usuarios más activos**
-4. **Publicaciones con mayor interacción**
-5. **Estructura de conversaciones**
-6. **Relaciones entre usuarios**
-7. **Comunidades**
-8. **Centralidad de usuarios**
-9. **Evolución del contenido durante el evento**
-
----
-
-# Arquitectura
-
-El proyecto está diseñado como un pipeline:
-
-```text
-                         X / Twitter
-                              │
-                              ▼
-                         ┌─────────┐
-                         │ Twikit  │
-                         └────┬────┘
-                              │
-                              ▼
-                     ┌────────────────┐
-                     │  Datos RAW     │
-                     │    JSONL       │
-                     └───────┬────────┘
-                             │
-                             ▼
-                       ┌────────────┐
-                       │  SQLite    │
-                       └─────┬──────┘
-                             │
-              ┌──────────────┼──────────────┐
-              │              │              │
-              ▼              ▼              ▼
-            Regex         pandas        NetworkX
-              │              │              │
-              ▼              ▼              ▼
-          contenido      estadísticas     grafo
-                                             │
-                                             ▼
-                                           Gephi
-```
-
-La separación entre datos RAW y datos procesados permite modificar el procesamiento sin necesidad de volver a realizar la recolección.
+La recolección se realiza dentro de ventanas temporales definidas mediante consultas de X.
 
 ---
 
 # Tecnologías
 
-El proyecto utiliza herramientas de código abierto o de distribución libre.
-
-| Herramienta   | Función                 |
-| ------------- | ----------------------- |
-| Python        | Lenguaje principal      |
-| Twikit        | Recolección             |
-| python-dotenv | Variables de entorno    |
-| SQLite        | Base de datos           |
-| pandas        | Análisis de datos       |
-| JupyterLab    | Análisis interactivo    |
-| NetworkX      | Análisis de redes       |
-| Matplotlib    | Gráficos                |
-| Gephi         | Visualización de grafos |
-| Git           | Control de versiones    |
+| Tecnología | Uso                                        |
+| ---------- | ------------------------------------------ |
+| Python     | Implementación                             |
+| twscrape   | Acceso y recolección de publicaciones de X |
+| JSONL      | Almacenamiento de datos                    |
+| Git        | Control de versiones                       |
 
 ---
 
 # Estructura del proyecto
 
 ```text
-twitter_argentina/
+scraper_implementacion/
 │
 ├── .env.example
 ├── .gitignore
@@ -149,18 +45,9 @@ twitter_argentina/
 │   ├── __init__.py
 │   ├── config.py
 │   ├── client.py
-│   ├── models.py
 │   ├── collector.py
-│   ├── database.py
-│   ├── process.py
-│   ├── graph.py
+│   ├── threads.py
 │   └── main.py
-│
-├── notebooks/
-│   ├── 01_exploracion.ipynb
-│   ├── 02_regex.ipynb
-│   ├── 03_analisis_temporal.ipynb
-│   └── 04_grafo.ipynb
 │
 ├── data/
 │   ├── raw/
@@ -176,66 +63,363 @@ twitter_argentina/
     └── esquema_datos.md
 ```
 
-## Descripción
-
-### `src/`
-
-Contiene el código fuente.
-
-### `notebooks/`
-
-Contiene los análisis exploratorios y experimentos.
-
-### `data/raw/`
-
-Contiene los datos originales obtenidos durante la recolección.
-
-### `data/processed/`
-
-Contiene datos limpiados y normalizados.
-
-### `data/exports/`
-
-Contiene archivos destinados a otras herramientas.
-
-### `results/`
-
-Contiene gráficos, resultados y archivos de grafos.
-
-### `docs/`
-
-Contiene la metodología y documentación del dataset.
+Los directorios de datos y resultados se mantienen separados del código fuente para facilitar las pruebas y el análisis posterior.
 
 ---
 
-# Requisitos
+# Componentes principales
 
-Se recomienda:
+## `src/config.py`
 
-* Linux;
-* Python 3.11 o superior;
-* Git;
-* una cuenta de X válida para utilizar Twikit;
-* Gephi, si se desea realizar análisis visual de redes.
+Contiene la configuración general del experimento:
 
-El proyecto fue diseñado para ejecutarse localmente.
+* período de búsqueda;
+* consultas;
+* cantidad máxima de tweets por búsqueda;
+* rutas de almacenamiento.
+
+Ejemplo:
+
+```python
+DATE_FROM = "2026-07-19"
+DATE_TO = "2026-07-20"
+
+SEARCHES = [
+    '"Argentina"',
+    '"España Argentina"',
+    '"Argentina España"',
+    '"Argentina campeón"',
+]
+
+MAX_TWEETS_PER_SEARCH = 100
+```
+
+---
+
+## `src/client.py`
+
+Se encarga de crear el cliente de `twscrape`.
+
+El cliente utiliza la base de cuentas configurada para `twscrape`.
+
+---
+
+## `src/collector.py`
+
+Es el componente principal de recolección.
+
+Sus responsabilidades son:
+
+1. ejecutar una búsqueda;
+2. obtener los tweets;
+3. convertir los objetos de `twscrape` a diccionarios;
+4. guardar los tweets en JSONL;
+5. identificar conversaciones;
+6. reconstruir los hilos;
+7. guardar los hilos obtenidos.
+
+Los tweets individuales se almacenan en:
+
+```text
+data/tweets.jsonl
+```
+
+Los hilos reconstruidos se almacenan en:
+
+```text
+data/threads.jsonl
+```
+
+Los archivos de datos locales no forman parte del repositorio.
+
+---
+
+## `src/threads.py`
+
+Contiene la lógica utilizada para reconstruir conversaciones.
+
+Utiliza:
+
+```python
+api.tweet_thread(...)
+```
+
+para recuperar los tweets pertenecientes a una conversación.
+
+Los tweets recuperados se ordenan cronológicamente antes de almacenarse.
+
+El límite utilizado al reconstruir un hilo es configurable:
+
+```python
+limit = 500
+```
+
+Este límite es importante porque una conversación puede contener una cantidad considerable de tweets.
+
+---
+
+## `src/main.py`
+
+Es el punto de entrada de la aplicación.
+
+Ejecuta el cliente y comienza la recolección utilizando la consulta configurada.
+
+Para ejecutar el programa:
+
+```bash
+python -m src.main
+```
+
+---
+
+# Flujo de recolección
+
+El funcionamiento general es:
+
+```text
+              X
+              │
+              ▼
+          twscrape
+              │
+              ▼
+        client.py
+              │
+              ▼
+       collector.py
+          │       │
+          │       │
+          ▼       ▼
+      tweets   conversaciones
+       JSONL        │
+                    ▼
+               threads.py
+                    │
+                    ▼
+              threads.jsonl
+```
+
+El proceso permite conservar tanto los tweets encontrados directamente mediante una búsqueda como las conversaciones reconstruidas a partir de ellos.
+
+---
+
+# Búsqueda de tweets
+
+Las búsquedas pueden utilizar los operadores disponibles en X.
+
+Por ejemplo:
+
+```text
+Argentina since:2026-07-19 until:2026-07-20
+```
+
+La consulta permite limitar la recolección a una ventana temporal.
+
+El programa muestra durante la ejecución información como:
+
+```text
+Iniciando cliente...
+Buscando: "Argentina since:2026-07-19 until:2026-07-20"
+Tweets encontrados: 24
+```
+
+---
+
+# Datos recolectados
+
+Cada tweet se convierte a un registro JSON.
+
+Ejemplo:
+
+```json
+{
+    "tweet_id": "123456789",
+    "username": "usuario",
+    "displayname": "Nombre",
+    "date": "2026-07-20T22:59:28+00:00",
+    "text": "Texto del tweet",
+    "likes": 100,
+    "retweets": 20,
+    "replies": 15,
+    "quotes": 3,
+    "views": 5000,
+    "conversation_id": "123456789",
+    "in_reply_to": null,
+    "in_reply_to_user": null,
+    "mentioned_users": [],
+    "hashtags": [],
+    "lang": "es",
+    "url": "https://x.com/..."
+}
+```
+
+---
+
+# Campos principales
+
+| Campo              | Descripción                      |
+| ------------------ | -------------------------------- |
+| `tweet_id`         | Identificador del tweet          |
+| `username`         | Usuario que publicó el tweet     |
+| `displayname`      | Nombre mostrado                  |
+| `date`             | Fecha y hora de publicación      |
+| `text`             | Contenido del tweet              |
+| `likes`            | Cantidad de likes                |
+| `retweets`         | Cantidad de retweets             |
+| `replies`          | Cantidad de respuestas           |
+| `quotes`           | Cantidad de citas                |
+| `views`            | Cantidad de visualizaciones      |
+| `conversation_id`  | Identificador de la conversación |
+| `in_reply_to`      | Tweet al que responde            |
+| `in_reply_to_user` | Usuario del tweet respondido     |
+| `mentioned_users`  | Usuarios mencionados             |
+| `hashtags`         | Hashtags utilizados              |
+| `lang`             | Idioma detectado                 |
+| `url`              | URL del tweet                    |
+
+---
+
+# Conversaciones
+
+Cada tweet puede pertenecer a una conversación identificada mediante `conversation_id`.
+
+Por ejemplo:
+
+```text
+Tweet A
+conversation_id = 100
+
+    │
+    ├── Tweet B
+    │   in_reply_to = A
+    │
+    ├── Tweet C
+    │   in_reply_to = A
+    │
+    └── Tweet D
+        in_reply_to = B
+```
+
+Esto permite reconstruir la estructura de un hilo.
+
+---
+
+# Reconstrucción de hilos
+
+Para reconstruir una conversación se utiliza:
+
+```python
+async for tweet in api.tweet_thread(
+    int(tweet_id),
+    limit=500,
+):
+    ...
+```
+
+El resultado se ordena por fecha.
+
+El formato almacenado es:
+
+```json
+{
+    "conversation_id": "123456789",
+    "tweets": [
+        {
+            "tweet_id": "123456789",
+            "username": "usuario1"
+        },
+        {
+            "tweet_id": "123456790",
+            "username": "usuario2"
+        }
+    ]
+}
+```
+
+Una conversación puede contener más tweets que los encontrados originalmente mediante la búsqueda.
+
+Por este motivo, la reconstrucción del hilo se realiza como una etapa independiente de la búsqueda.
+
+---
+
+# Almacenamiento JSONL
+
+Los datos se almacenan utilizando **JSON Lines (JSONL)**.
+
+Cada línea representa un registro independiente.
+
+Ejemplo:
+
+```text
+{"tweet_id":"1", ...}
+{"tweet_id":"2", ...}
+{"tweet_id":"3", ...}
+```
+
+Esto permite:
+
+* procesar los registros individualmente;
+* agregar nuevos datos sin reconstruir todo el archivo;
+* trabajar con datasets grandes;
+* conservar una estructura sencilla y portable.
+
+Para leer los tweets:
+
+```python
+import json
+
+with open(
+    "data/tweets.jsonl",
+    encoding="utf-8"
+) as file:
+
+    for line in file:
+
+        tweet = json.loads(line)
+
+        print(tweet["username"])
+        print(tweet["text"])
+```
+
+---
+
+# Evitar duplicados
+
+La función de almacenamiento comprueba los identificadores existentes antes de agregar nuevos registros.
+
+Para los tweets se utiliza:
+
+```text
+tweet_id
+```
+
+Para las conversaciones se utiliza:
+
+```text
+conversation_id
+```
+
+De esta forma, ejecutar nuevamente una búsqueda no debería agregar registros idénticos al archivo existente.
+
+---
+
+# Configuración de cuentas
+
+`twscrape` utiliza cuentas de X para realizar las solicitudes.
+
+Las cuentas se administran mediante la base local de cuentas de `twscrape`.
+
+Las credenciales y datos de autenticación son información privada y **no deben subirse al repositorio**.
+
+Si una cuenta deja de estar disponible temporalmente debido a límites de solicitudes, `twscrape` puede esperar hasta que una cuenta vuelva a estar disponible.
+
+El uso de varias cuentas permite distribuir las solicitudes entre las cuentas configuradas.
 
 ---
 
 # Instalación
 
-## 1. Clonar el repositorio
-
-```bash
-git clone https://github.com/USUARIO/scraper_implementacion.git
-cd scraper_implementacion
-```
-
-Reemplazar la dirección anterior por la URL real del repositorio.
-
----
-
-## 2. Crear entorno virtual
+Crear un entorno virtual:
 
 ```bash
 python -m venv .venv
@@ -247,15 +431,7 @@ Activarlo:
 source .venv/bin/activate
 ```
 
-En Windows:
-
-```powershell
-.venv\Scripts\activate
-```
-
----
-
-## 3. Instalar dependencias
+Instalar las dependencias:
 
 ```bash
 pip install -r requirements.txt
@@ -263,911 +439,209 @@ pip install -r requirements.txt
 
 ---
 
-# Configuración
+# Configuración de twscrape
 
-El proyecto utiliza variables de entorno para las credenciales.
+Las cuentas pueden administrarse utilizando la interfaz de línea de comandos de `twscrape`.
 
-Crear un archivo:
-
-```text
-.env
-```
-
-a partir de:
-
-```text
-.env.example
-```
-
-Por ejemplo:
-
-```env
-TWITTER_USERNAME=mi_usuario
-TWITTER_EMAIL=correo@example.com
-TWITTER_PASSWORD=mi_password
-```
-
-El archivo `.env` está incluido en `.gitignore` y **no debe subirse al repositorio**.
-
----
-
-# Autenticación
-
-La primera ejecución utiliza las credenciales configuradas en `.env`.
-
-Después de autenticarse, el proyecto guarda las cookies localmente:
-
-```text
-cookies.json
-```
-
-Este archivo también está excluido mediante `.gitignore`.
-
-Las cookies no deben compartirse ni subirlas a Git.
-
----
-
-# Configuración del experimento
-
-La configuración principal está en:
-
-```text
-src/config.py
-```
-
-Ejemplo:
-
-```python
-DATE_FROM = "2026-07-19"
-DATE_TO = "2026-07-20"
-
-SEARCHES = [
-    "Argentina",
-    '"España Argentina"',
-    '"Argentina España"',
-    '"Argentina campeón"',
-]
-
-MAX_TWEETS_PER_SEARCH = 100
-```
-
-Esto define:
-
-* fecha inicial;
-* fecha final;
-* consultas;
-* cantidad máxima de resultados por consulta.
-
----
-
-# Ejecutar el MVP
-
-Una vez configurado el proyecto:
+Para consultar las opciones disponibles:
 
 ```bash
-source .venv/bin/activate
+twscrape --help
 ```
 
-Ejecutar:
+Para consultar las cuentas configuradas:
+
+```bash
+twscrape accounts
+```
+
+También pueden consultarse las estadísticas:
+
+```bash
+twscrape stats
+```
+
+El procedimiento exacto de autenticación depende de la configuración de las cuentas y de los mecanismos de autenticación disponibles en X.
+
+---
+
+# Ejecución
+
+Con el entorno virtual activado:
 
 ```bash
 python -m src.main
 ```
 
-El programa:
-
-1. crea la base SQLite;
-2. inicia el cliente de Twikit;
-3. realiza las búsquedas;
-4. pagina los resultados;
-5. elimina duplicados;
-6. normaliza los tweets;
-7. guarda los resultados en JSONL;
-8. inserta los datos en SQLite.
-
----
-
-# Ejemplo de ejecución
-
-Una ejecución podría producir:
-
-```text
-Cargando cookies...
-
-Buscando: Argentina since:2026-07-19 until:2026-07-20
-
-[1] @usuario1: Argentinaaaaa 🇦🇷🇦🇷🇦🇷
-[2] @usuario2: QUÉ PARTIDO
-[3] @usuario3: No puedo creerlo
-[4] @usuario4: Argentina campeón!!!
-
-Buscando: "España Argentina" since:2026-07-19 until:2026-07-20
-
-[1] @usuario5: ...
-[2] @usuario6: ...
-
-Tweets únicos: 327
-
-Datos procesados correctamente.
-
-Proyecto finalizado.
-```
-
----
-
-# Datos recolectados
-
-Cada tweet se normaliza mediante `TweetData`.
-
-El modelo contiene:
-
-```text
-tweet_id
-author_id
-author_username
-author_name
-created_at
-text
-like_count
-retweet_count
-reply_count
-quote_count
-view_count
-conversation_id
-parent_tweet_id
-url
-search_query
-```
-
----
-
-# Significado de los campos
-
-| Campo             | Descripción                           |
-| ----------------- | ------------------------------------- |
-| `tweet_id`        | Identificador del tweet               |
-| `author_id`       | Identificador del autor               |
-| `author_username` | Nombre de usuario                     |
-| `author_name`     | Nombre visible                        |
-| `created_at`      | Fecha y hora                          |
-| `text`            | Contenido textual                     |
-| `like_count`      | Cantidad de likes                     |
-| `retweet_count`   | Cantidad de retweets                  |
-| `reply_count`     | Cantidad de respuestas                |
-| `quote_count`     | Cantidad de citas                     |
-| `view_count`      | Visualizaciones, si están disponibles |
-| `conversation_id` | Identificador de conversación         |
-| `parent_tweet_id` | Tweet al que responde                 |
-| `url`             | URL del tweet                         |
-| `search_query`    | Consulta que produjo el resultado     |
-
----
-
-# Formato JSONL
-
-Los datos RAW se guardan en:
-
-```text
-data/raw/tweets.jsonl
-```
-
-JSONL significa que cada línea contiene un objeto JSON independiente.
+El programa realiza la búsqueda configurada y muestra información sobre el proceso.
 
 Ejemplo:
 
-```json
-{"tweet_id":"1001","author_id":"50","author_username":"usuario1","author_name":"Juan","created_at":"...","text":"Argentina!!!","like_count":1500,"retweet_count":200,"reply_count":50}
-{"tweet_id":"1002","author_id":"51","author_username":"usuario2","author_name":"Ana","created_at":"...","text":"Qué partido","like_count":300,"retweet_count":20,"reply_count":5}
-```
+```text
+Iniciando cliente...
+Buscando: "Argentina since:2026-07-19 until:2026-07-20"
+Tweets encontrados: 24
+Tweets guardados en: data/tweets.jsonl
+Conversaciones únicas: 24
+Reconstruyendo conversación ...
+...
+Hilos guardados en: data/threads.jsonl
 
-Esto permite procesar grandes cantidades de datos sin tener que cargar todo el dataset en memoria.
-
----
-
-# Leer el JSONL con Python
-
-```python
-import json
-
-with open(
-    "data/raw/tweets.jsonl",
-    encoding="utf-8"
-) as file:
-
-    for line in file:
-
-        tweet = json.loads(line)
-
-        print(tweet["author_username"])
-        print(tweet["text"])
+Proceso terminado.
 ```
 
 ---
 
-# Base de datos SQLite
+# Pruebas de reconstrucción de conversaciones
 
-Los datos procesados se almacenan en:
-
-```text
-data/twitter.db
-```
-
-La base contiene tres tablas principales.
-
-## `users`
+Durante el desarrollo se utiliza un script independiente para comprobar la cantidad de tweets recuperados de una conversación:
 
 ```text
-user_id
-username
-display_name
+test_thread_info.py
 ```
 
-## `tweets`
+Este script permite probar distintos valores de `limit`.
+
+Por ejemplo:
 
 ```text
-tweet_id
-author_id
-created_at
-text
-like_count
-retweet_count
-reply_count
-quote_count
-view_count
-conversation_id
-parent_tweet_id
-url
-search_query
+limit=50  -> tweets=95
+limit=100 -> tweets=131
+limit=200 -> tweets=222
+limit=300 -> tweets=311
+limit=500 -> tweets=315
+limit=1000 -> tweets=316
 ```
 
-## `relationships`
+Esto permite determinar experimentalmente cuándo `tweet_thread()` deja de devolver nuevos tweets para una conversación determinada.
 
-```text
-source_id
-target_id
-relationship_type
-tweet_id
-```
-
----
-
-# Consultar SQLite
-
-SQLite puede consultarse desde Python:
-
-```python
-import sqlite3
-
-db = sqlite3.connect(
-    "data/twitter.db"
-)
-
-cursor = db.execute(
-    """
-    SELECT *
-    FROM tweets
-    LIMIT 10
-    """
-)
-
-for row in cursor:
-    print(row)
-```
-
----
-
-# Ejemplo: tweets con más likes
-
-```python
-import sqlite3
-
-db = sqlite3.connect(
-    "data/twitter.db"
-)
-
-rows = db.execute(
-    """
-    SELECT
-        author_id,
-        text,
-        like_count
-    FROM tweets
-    ORDER BY like_count DESC
-    LIMIT 20
-    """
-)
-
-for row in rows:
-    print(row)
-```
-
----
-
-# Ejemplo: usuarios más activos
-
-```sql
-SELECT
-    author_id,
-    COUNT(*) AS tweet_count
-FROM tweets
-GROUP BY author_id
-ORDER BY tweet_count DESC
-LIMIT 20;
-```
-
----
-
-# JupyterLab
-
-Para iniciar JupyterLab:
-
-```bash
-jupyter lab
-```
-
-Se pueden ejecutar los notebooks:
-
-```text
-notebooks/
-├── 01_exploracion.ipynb
-├── 02_regex.ipynb
-├── 03_analisis_temporal.ipynb
-└── 04_grafo.ipynb
-```
-
----
-
-# 01 - Exploración
-
-El primer notebook permite conocer el dataset.
-
-Ejemplo:
-
-```python
-import sqlite3
-import pandas as pd
-
-db = sqlite3.connect(
-    "../data/twitter.db"
-)
-
-tweets = pd.read_sql_query(
-    "SELECT * FROM tweets",
-    db
-)
-
-tweets.head()
-```
-
-Cantidad de tweets:
-
-```python
-len(tweets)
-```
-
-Cantidad de usuarios:
-
-```python
-tweets["author_id"].nunique()
-```
-
-Tweets con mayor interacción:
-
-```python
-tweets.sort_values(
-    "like_count",
-    ascending=False
-).head(20)
-```
-
----
-
-# 02 - Análisis mediante Regex
-
-El contenido textual puede analizarse mediante expresiones regulares.
-
-Por ejemplo, encontrar menciones de Argentina:
-
-```python
-import re
-
-pattern = re.compile(
-    r"\b(argentina|argentino|argentina|argentinos)\b",
-    re.IGNORECASE
-)
-
-tweets["mentions_argentina"] = (
-    tweets["text"]
-    .fillna("")
-    .apply(
-        lambda text: bool(
-            pattern.search(text)
-        )
-    )
-)
-```
-
-Extraer hashtags:
-
-```python
-tweets["hashtags"] = (
-    tweets["text"]
-    .fillna("")
-    .apply(
-        lambda text: re.findall(
-            r"#\w+",
-            text
-        )
-    )
-)
-```
-
-Extraer menciones:
-
-```python
-tweets["mentions"] = (
-    tweets["text"]
-    .fillna("")
-    .apply(
-        lambda text: re.findall(
-            r"@\w+",
-            text
-        )
-    )
-)
-```
-
-Extraer URLs:
-
-```python
-tweets["urls"] = (
-    tweets["text"]
-    .fillna("")
-    .apply(
-        lambda text: re.findall(
-            r"https?://\S+",
-            text
-        )
-    )
-)
-```
-
----
-
-# 03 - Análisis temporal
-
-Convertir fechas:
-
-```python
-tweets["created_at"] = pd.to_datetime(
-    tweets["created_at"],
-    errors="coerce"
-)
-```
-
-Cantidad de tweets por hora:
-
-```python
-tweets.set_index(
-    "created_at"
-).resample(
-    "1H"
-).size()
-```
-
-Cantidad cada 15 minutos:
-
-```python
-tweets.set_index(
-    "created_at"
-).resample(
-    "15min"
-).size()
-```
-
-Esto permite estudiar picos de actividad.
-
----
-
-# Visualización temporal
-
-Ejemplo:
-
-```python
-import matplotlib.pyplot as plt
-
-activity = (
-    tweets
-    .set_index("created_at")
-    .resample("15min")
-    .size()
-)
-
-activity.plot()
-
-plt.title(
-    "Actividad relacionada con Argentina"
-)
-
-plt.xlabel("Fecha")
-plt.ylabel("Cantidad de tweets")
-
-plt.tight_layout()
-
-plt.show()
-```
-
-Los gráficos pueden guardarse en:
-
-```text
-results/figures/
-```
-
----
-
-# 04 - Análisis de grafos
-
-El proyecto utiliza NetworkX para representar relaciones.
-
-Un ejemplo de relación:
-
-```text
-Usuario A
-    │
-    │ reply
-    ▼
-Usuario B
-```
-
-Puede representarse como:
-
-```text
-source = A
-target = B
-type = reply
-```
-
----
-
-# Crear el grafo
-
-El módulo:
-
-```text
-src/graph.py
-```
-
-construye un grafo dirigido.
-
-Ejecutar:
-
-```python
-from src.graph import export_graph
-
-export_graph()
-```
-
-Esto genera:
-
-```text
-results/graphs/reply_graph.gexf
-```
-
----
-
-# Abrir el grafo con Gephi
-
-Instalar Gephi y abrir:
-
-```text
-results/graphs/reply_graph.gexf
-```
-
-Gephi permite estudiar:
-
-* grado;
-* centralidad;
-* comunidades;
-* modularidad;
-* componentes;
-* distribución de conexiones.
-
----
-
-# Centralidad con NetworkX
-
-Ejemplo:
-
-```python
-import networkx as nx
-
-graph = nx.read_gexf(
-    "results/graphs/reply_graph.gexf"
-)
-
-centrality = nx.degree_centrality(
-    graph
-)
-
-ranking = sorted(
-    centrality.items(),
-    key=lambda x: x[1],
-    reverse=True
-)
-
-for user, score in ranking[:20]:
-    print(user, score)
-```
-
----
-
-# Modelo conceptual del grafo
-
-El proyecto puede producir una estructura como:
-
-```text
-                 Usuario A
-                /         \
-               /           \
-            reply         reply
-             /               \
-            ▼                 ▼
-       Usuario B          Usuario C
-            │
-           reply
-            │
-            ▼
-       Usuario D
-```
-
-Posteriormente se pueden agregar otras relaciones:
-
-```text
-reply
-mention
-quote
-retweet
-```
-
----
-
-# Reconstrucción de conversaciones
-
-Los tweets contienen:
-
-```text
-conversation_id
-parent_tweet_id
-```
-
-Estos campos permiten reconstruir conversaciones.
-
-Ejemplo:
-
-```text
-Tweet A
-conversation_id = 100
-parent = NULL
-
-Tweet B
-conversation_id = 100
-parent = A
-
-Tweet C
-conversation_id = 100
-parent = B
-
-Tweet D
-conversation_id = 100
-parent = A
-```
-
-La conversación se representa como:
-
-```text
-A
-├── B
-│   └── C
-└── D
-```
+El script es una herramienta de prueba y no forma parte del pipeline principal.
 
 ---
 
 # Reproducibilidad
 
-El experimento debe documentar:
+Para facilitar la reproducción del experimento se mantienen separadas:
 
-```text
-Fecha de recolección
-Hora de inicio
-Hora de finalización
-Consultas
-Ventana temporal
-Cantidad máxima de resultados
-Criterios de inclusión
-Criterios de exclusión
-Método de deduplicación
-Versión de Python
-Versión de Twikit
-```
+* la configuración;
+* el código de recolección;
+* los datos recolectados;
+* la documentación.
 
-La configuración del experimento está centralizada en:
+Las consultas y ventanas temporales utilizadas se encuentran en:
 
 ```text
 src/config.py
 ```
 
----
-
-# Ejemplo de experimento
-
-Un experimento podría utilizar:
+Los datos obtenidos durante las pruebas se almacenan localmente en:
 
 ```text
-Ventana:
-
-2026-07-19 00:00
-hasta
-2026-07-20 00:00
+data/
 ```
-
-Consultas:
-
-```text
-Argentina
-"España Argentina"
-"Argentina España"
-"Argentina campeón"
-```
-
-Máximo inicial:
-
-```text
-100 tweets por consulta
-```
-
-Esto permite obtener un dataset inicial de tamaño reducido para validar el pipeline.
-
-Una vez validado el MVP, se puede aumentar progresivamente el tamaño del dataset.
 
 ---
 
-# Privacidad
+# Privacidad y seguridad
 
-El dataset puede contener identificadores y nombres de usuario.
+El proyecto trabaja con información pública de X, pero los datos recolectados pueden contener identificadores, nombres de usuario y contenido publicado.
 
-Por ese motivo:
+Por este motivo:
 
 * no se deben almacenar credenciales en Git;
 * no se deben publicar cookies;
-* no se deben publicar datos innecesarios;
-* se debe considerar la legislación aplicable;
-* se debe revisar qué datos son realmente necesarios para el análisis;
-* se debe evaluar la anonimización antes de distribuir datasets.
-
-El repositorio contiene principalmente **código y metodología**.
+* no se deben publicar bases de autenticación;
+* no se deben subir datasets innecesarios;
+* se debe revisar qué información es necesaria para el análisis;
+* se debe considerar la anonimización antes de distribuir los datos;
+* se deben respetar las condiciones de uso de la plataforma y la legislación aplicable.
 
 ---
 
-# Qué NO subir al repositorio
+# Archivos que no deben subirse
 
-No deben subirse:
+El repositorio no debe contener información privada ni datos generados localmente durante las pruebas.
+
+Entre ellos:
 
 ```text
 .env
+accounts.db
 cookies.json
 ```
 
-Tampoco se recomienda subir directamente:
+Tampoco deberían subirse los datasets recolectados:
 
 ```text
-data/raw/
-data/twitter.db
+data/*.jsonl
+data/*.db
 ```
 
-si contienen datos recolectados que no se desea redistribuir.
+El archivo `.gitignore` se utiliza para evitar incluir estos archivos accidentalmente.
 
-El `.gitignore` está configurado para evitarlo.
+El archivo:
 
----
+```text
+.env.example
+```
 
-# Posibles extensiones
-
-Una vez completado el MVP se pueden implementar:
-
-## Recolección
-
-* mayor cantidad de consultas;
-* más ventanas temporales;
-* recolección por intervalos;
-* control de duplicados;
-* registro de errores;
-* logs;
-* metadatos del experimento.
-
-## Conversaciones
-
-* reconstrucción automática de hilos;
-* identificación de tweets raíz;
-* profundidad de conversación;
-* cantidad de respuestas;
-* árboles de conversación.
-
-## Texto
-
-* hashtags;
-* menciones;
-* URLs;
-* emojis;
-* palabras frecuentes;
-* expresiones regulares;
-* clasificación temática;
-* análisis de sentimiento;
-* detección de entidades.
-
-## Redes
-
-* replies;
-* mentions;
-* quotes;
-* retweets;
-* comunidades;
-* centralidad;
-* influencia;
-* evolución temporal de la red.
-
-## Visualización
-
-* actividad por minuto;
-* actividad por hora;
-* distribución de likes;
-* distribución de retweets;
-* evolución de hashtags;
-* grafos temporales;
-* comunidades.
+puede utilizarse como referencia para documentar las variables necesarias sin incluir valores privados.
 
 ---
 
 # Estado del proyecto
 
-## MVP
+Actualmente el pipeline permite:
 
-* [x] Estructura del proyecto
-* [x] Entorno virtual
-* [x] Configuración mediante `.env`
-* [x] Cliente Twikit
-* [x] Búsqueda
-* [x] Paginación
-* [x] Deduplicación
-* [x] Normalización
-* [x] JSONL
-* [x] SQLite
-* [ ] Reconstrucción completa de hilos
-* [ ] Extracción de relaciones
-* [ ] Análisis completo mediante Regex
-* [ ] Análisis temporal
-* [ ] Grafo completo
-* [ ] Visualización Gephi
+* [x] Configuración de búsquedas
+* [x] Cliente `twscrape`
+* [x] Recolección de tweets
+* [x] Conversión a JSONL
+* [x] Detección de conversaciones
+* [x] Reconstrucción de conversaciones
+* [x] Ordenamiento cronológico de los tweets
+* [x] Prevención de tweets duplicados
+* [x] Prevención de conversaciones duplicadas
+* [x] Uso de múltiples cuentas mediante `twscrape`
 
 ---
 
-# Licencia
+# Posibles extensiones
 
-TBD
+Una vez establecida la recolección básica pueden implementarse:
+
+## Recolección
+
+* más consultas;
+* más ventanas temporales;
+* recolección por intervalos;
+* recuperación de conversaciones más profundas;
+* manejo de errores y reintentos.
+
+## Análisis
+
+* análisis temporal;
+* análisis de usuarios;
+* análisis de hashtags;
+* análisis de menciones;
+* análisis de respuestas;
+* análisis del contenido textual;
+* clasificación de publicaciones.
+
+## Visualización
+
+Los datos almacenados en JSONL pueden utilizarse posteriormente para generar tablas, estadísticas y visualizaciones sin modificar el proceso de recolección.
 
 ---
 
-# Autor
+# Documentación
 
-TBD
+La documentación adicional se encuentra en:
 
 ```text
-Python
-Twikit
-SQLite
-pandas
-NetworkX
-JupyterLab
-Gephi
-Git
+docs/
+├── metodologia.md
+└── esquema_datos.md
 ```
+
+Estos documentos describen la metodología del proyecto y la estructura de los datos utilizados.
