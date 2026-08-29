@@ -279,10 +279,9 @@ async def collect_tweets(
         }
 
         if root_id not in thread_ids:
-            thread.insert(
-                0,
-                root_tweet,
-            )
+            thread.append(root_tweet)
+
+        thread.sort(key=lambda tweet: tweet.date)
 
         thread_data = {
             "conversation_id": conversation_id,

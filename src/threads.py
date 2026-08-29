@@ -8,7 +8,8 @@ async def reconstruct_thread(
 ):
     """
     Recupera una conversación usando tweet_thread(),
-    eliminando tweets duplicados.
+    eliminando tweets duplicados y colocando
+    el tweet raíz como primer elemento.
     """
 
     thread = []
@@ -28,6 +29,23 @@ async def reconstruct_thread(
         print(f"No se pudo recuperar el hilo {tweet_id}")
         return []
 
-    thread.sort(key=lambda tweet: tweet.date)
+    # Tweet raíz de la conversación
+    root = None
+    others = []
+
+    for tweet in thread:
+        if str(tweet.id) == str(tweet_id):
+            root = tweet
+        else:
+            others.append(tweet)
+
+    # Orden cronológico del resto
+    others.sort(key=lambda tweet: tweet.date)
+
+    # El tweet raíz siempre va primero
+    if root is not None:
+        thread = [root] + others
+    else:
+        thread = others
 
     return thread
