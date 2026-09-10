@@ -46,6 +46,16 @@ def _read_pid(path: Path) -> int | None:
 def process_is_running(pid: int | None) -> bool:
     if not pid or pid <= 0:
         return False
+    # A detached worker remains briefly as a zombie until its parent collects
+    # the exit status. Reap it without blocking so a completed campaign does
+    # not keep appearing as "Ejecutándose" in Streamlit.
+    if hasattr(os, "waitpid"):
+        try:
+            finished_pid, _ = os.waitpid(pid, os.WNOHANG)
+            if finished_pid == pid:
+                return False
+        except ChildProcessError:
+            pass
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
@@ -58,10 +68,13 @@ def process_is_running(pid: int | None) -> bool:
 def process_status(run_id: str, root: Path = PROJECT_ROOT) -> dict[str, Any]:
     files = process_files(run_id, root)
     pid = _read_pid(files.pid)
+    running = process_is_running(pid)
+    if pid and not running:
+        files.pid.unlink(missing_ok=True)
     return {
         "run_id": safe_name(run_id),
         "pid": pid,
-        "running": process_is_running(pid),
+        "running": running,
         "log": files.log,
         "pid_file": files.pid,
     }

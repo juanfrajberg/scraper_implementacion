@@ -15,6 +15,16 @@ def test_missing_process_is_not_running(tmp_path):
     assert status["pid"] is None
 
 
+def test_completed_child_is_reaped_and_pid_file_removed(tmp_path):
+    pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
+    pid_file.parent.mkdir(parents=True)
+    pid_file.write_text('{"pid": 123}', encoding="utf-8")
+    with patch("ui.runtime.os.waitpid", return_value=(123, 0)):
+        status = process_status("prueba", tmp_path)
+    assert status["running"] is False
+    assert not pid_file.exists()
+
+
 def test_stop_process_removes_pid_file(tmp_path):
     pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
     pid_file.parent.mkdir(parents=True)
