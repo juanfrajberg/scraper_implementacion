@@ -1,6 +1,7 @@
 import sqlite3
+from unittest.mock import patch
 
-from ui.runtime import account_rows, database_counts, process_status, safe_name
+from ui.runtime import account_rows, database_counts, process_status, safe_name, stop_process
 
 
 def test_safe_name_removes_unsafe_characters():
@@ -12,6 +13,28 @@ def test_missing_process_is_not_running(tmp_path):
     status = process_status("prueba", tmp_path)
     assert status["running"] is False
     assert status["pid"] is None
+
+
+def test_stop_process_removes_pid_file(tmp_path):
+    pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
+    pid_file.parent.mkdir(parents=True)
+    pid_file.write_text('{"pid": 123}', encoding="utf-8")
+    with patch("ui.runtime.process_is_running", return_value=True), patch(
+        "ui.runtime.os.killpg"
+    ):
+        assert stop_process("prueba", tmp_path) is True
+    assert not pid_file.exists()
+
+
+def test_stop_process_handles_stale_or_inaccessible_pid(tmp_path):
+    pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
+    pid_file.parent.mkdir(parents=True)
+    pid_file.write_text('{"pid": 123}', encoding="utf-8")
+    with patch("ui.runtime.process_is_running", return_value=True), patch(
+        "ui.runtime.os.killpg", side_effect=PermissionError
+    ):
+        assert stop_process("prueba", tmp_path) is False
+    assert not pid_file.exists()
 
 
 def test_account_rows_do_not_expose_cookies(tmp_path):

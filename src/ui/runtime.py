@@ -106,11 +106,20 @@ def stop_process(run_id: str, root: Path = PROJECT_ROOT) -> bool:
     status = process_status(run_id, root)
     pid = status["pid"]
     if not status["running"] or not pid:
+        status["pid_file"].unlink(missing_ok=True)
         return False
     try:
         os.killpg(pid, signal.SIGINT)
     except ProcessLookupError:
+        status["pid_file"].unlink(missing_ok=True)
         return False
+    except PermissionError:
+        # The worker may already have exited while Streamlit was rerunning the
+        # page. In that case the stored PID is stale (or has been reused), so
+        # it must never be signalled again.
+        status["pid_file"].unlink(missing_ok=True)
+        return False
+    status["pid_file"].unlink(missing_ok=True)
     return True
 
 
