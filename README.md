@@ -1,647 +1,155 @@
-# Análisis de conversaciones sobre Argentina en X
+# X Research Console
 
-Proyecto académico de **recolección y análisis de publicaciones públicas de X (Twitter)** relacionadas con Argentina durante un período determinado.
+Aplicación local para recolectar publicaciones públicas de X con **twscrape**, dividir las
+búsquedas en períodos pequeños, retomar interrupciones, reconstruir conversaciones y exportar
+resultados sin editar archivos de Python.
 
-El proyecto utiliza **Python** y **twscrape** para realizar búsquedas, almacenar tweets en formato JSONL y reconstruir las conversaciones asociadas a los tweets encontrados.
+La interfaz corre en la computadora del investigador. Las cookies, las bases y las descargas no
+se publican en GitHub.
 
----
+## Qué mejora
 
-# Objetivo
+- usa límites exactos `since_time` y `until_time` en la zona horaria de Argentina;
+- descarta resultados que X entregue fuera del período;
+- divide cada campaña por día, hora o intervalos menores;
+- registra cada tuit inmediatamente en SQLite y JSONL;
+- permite detener y reanudar sin duplicar publicaciones;
+- marca trabajos saturados y puede subdividirlos automáticamente;
+- conserva consulta, capa, período, computadora y tipo de captura;
+- separa resultados directos de respuestas incorporadas al reconstruir hilos;
+- permite repartir trabajos entre varias computadoras;
+- exporta tuits únicos y conversaciones ordenadas a CSV;
+- muestra cuentas, progreso, errores y resultados en una interfaz gráfica.
 
-El objetivo principal es construir un pipeline reproducible para recolectar publicaciones públicas de X y estudiar:
+## Empezar
 
-* publicaciones relacionadas con Argentina;
-* autores y fechas de publicación;
-* interacciones entre publicaciones;
-* conversaciones y respuestas;
-* estructura temporal de las conversaciones.
+### 1. Preparar Python
 
-La recolección se realiza dentro de ventanas temporales definidas mediante consultas de X.
-
----
-
-# Tecnologías
-
-| Tecnología | Uso                                        |
-| ---------- | ------------------------------------------ |
-| Python     | Implementación                             |
-| twscrape   | Acceso y recolección de publicaciones de X |
-| JSONL      | Almacenamiento de datos                    |
-| Git        | Control de versiones                       |
-
----
-
-# Estructura del proyecto
-
-```text
-scraper_implementacion/
-│
-├── .env.example
-├── .gitignore
-├── README.md
-├── requirements.txt
-│
-├── src/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── client.py
-│   ├── collector.py
-│   ├── threads.py
-│   └── main.py
-│
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── exports/
-│
-├── results/
-│   ├── figures/
-│   └── graphs/
-│
-└── docs/
-    ├── metodologia.md
-    └── esquema_datos.md
-```
-
-Los directorios de datos y resultados se mantienen separados del código fuente para facilitar las pruebas y el análisis posterior.
-
----
-
-# Componentes principales
-
-## `src/config.py`
-
-Contiene la configuración general del experimento:
-
-* período de búsqueda;
-* consultas;
-* cantidad máxima de tweets por búsqueda;
-* rutas de almacenamiento.
-
-Ejemplo:
-
-```python
-DATE_FROM = "2026-07-19"
-DATE_TO = "2026-07-20"
-
-SEARCHES = [
-    '"Argentina"',
-    '"España Argentina"',
-    '"Argentina España"',
-    '"Argentina campeón"',
-]
-
-MAX_TWEETS_PER_SEARCH = 100
-```
-
----
-
-## `src/client.py`
-
-Se encarga de crear el cliente de `twscrape`.
-
-El cliente utiliza la base de cuentas configurada para `twscrape`.
-
----
-
-## `src/collector.py`
-
-Es el componente principal de recolección.
-
-Sus responsabilidades son:
-
-1. ejecutar una búsqueda;
-2. obtener los tweets;
-3. convertir los objetos de `twscrape` a diccionarios;
-4. guardar los tweets en JSONL;
-5. identificar conversaciones;
-6. reconstruir los hilos;
-7. guardar los hilos obtenidos.
-
-Los tweets individuales se almacenan en:
-
-```text
-data/tweets.jsonl
-```
-
-Los hilos reconstruidos se almacenan en:
-
-```text
-data/threads.jsonl
-```
-
-Los archivos de datos locales no forman parte del repositorio.
-
----
-
-## `src/threads.py`
-
-Contiene la lógica utilizada para reconstruir conversaciones.
-
-Utiliza:
-
-```python
-api.tweet_thread(...)
-```
-
-para recuperar los tweets pertenecientes a una conversación.
-
-Los tweets recuperados se ordenan cronológicamente antes de almacenarse.
-
-El límite utilizado al reconstruir un hilo es configurable:
-
-```python
-limit = 500
-```
-
-Este límite es importante porque una conversación puede contener una cantidad considerable de tweets.
-
----
-
-## `src/main.py`
-
-Es el punto de entrada de la aplicación.
-
-Ejecuta el cliente y comienza la recolección utilizando la consulta configurada.
-
-Para ejecutar el programa:
+En macOS o Linux:
 
 ```bash
-python -m src.main
-```
-
----
-
-# Flujo de recolección
-
-El funcionamiento general es:
-
-```text
-              X
-              │
-              ▼
-          twscrape
-              │
-              ▼
-        client.py
-              │
-              ▼
-       collector.py
-          │       │
-          │       │
-          ▼       ▼
-      tweets   conversaciones
-       JSONL        │
-                    ▼
-               threads.py
-                    │
-                    ▼
-              threads.jsonl
-```
-
-El proceso permite conservar tanto los tweets encontrados directamente mediante una búsqueda como las conversaciones reconstruidas a partir de ellos.
-
----
-
-# Búsqueda de tweets
-
-Las búsquedas pueden utilizar los operadores disponibles en X.
-
-Por ejemplo:
-
-```text
-Argentina since:2026-07-19 until:2026-07-20
-```
-
-La consulta permite limitar la recolección a una ventana temporal.
-
-El programa muestra durante la ejecución información como:
-
-```text
-Iniciando cliente...
-Buscando: "Argentina since:2026-07-19 until:2026-07-20"
-Tweets encontrados: 24
-```
-
----
-
-# Datos recolectados
-
-Cada tweet se convierte a un registro JSON.
-
-Ejemplo:
-
-```json
-{
-    "tweet_id": "123456789",
-    "username": "usuario",
-    "displayname": "Nombre",
-    "date": "2026-07-20T22:59:28+00:00",
-    "text": "Texto del tweet",
-    "likes": 100,
-    "retweets": 20,
-    "replies": 15,
-    "quotes": 3,
-    "views": 5000,
-    "conversation_id": "123456789",
-    "in_reply_to": null,
-    "in_reply_to_user": null,
-    "mentioned_users": [],
-    "hashtags": [],
-    "lang": "es",
-    "url": "https://x.com/..."
-}
-```
-
----
-
-# Campos principales
-
-| Campo              | Descripción                      |
-| ------------------ | -------------------------------- |
-| `tweet_id`         | Identificador del tweet          |
-| `username`         | Usuario que publicó el tweet     |
-| `displayname`      | Nombre mostrado                  |
-| `date`             | Fecha y hora de publicación      |
-| `text`             | Contenido del tweet              |
-| `likes`            | Cantidad de likes                |
-| `retweets`         | Cantidad de retweets             |
-| `replies`          | Cantidad de respuestas           |
-| `quotes`           | Cantidad de citas                |
-| `views`            | Cantidad de visualizaciones      |
-| `conversation_id`  | Identificador de la conversación |
-| `in_reply_to`      | Tweet al que responde            |
-| `in_reply_to_user` | Usuario del tweet respondido     |
-| `mentioned_users`  | Usuarios mencionados             |
-| `hashtags`         | Hashtags utilizados              |
-| `lang`             | Idioma detectado                 |
-| `url`              | URL del tweet                    |
-
----
-
-# Conversaciones
-
-Cada tweet puede pertenecer a una conversación identificada mediante `conversation_id`.
-
-Por ejemplo:
-
-```text
-Tweet A
-conversation_id = 100
-
-    │
-    ├── Tweet B
-    │   in_reply_to = A
-    │
-    ├── Tweet C
-    │   in_reply_to = A
-    │
-    └── Tweet D
-        in_reply_to = B
-```
-
-Esto permite reconstruir la estructura de un hilo.
-
----
-
-# Reconstrucción de hilos
-
-Para reconstruir una conversación se utiliza:
-
-```python
-async for tweet in api.tweet_thread(
-    int(tweet_id),
-    limit=500,
-):
-    ...
-```
-
-El resultado se ordena por fecha.
-
-El formato almacenado es:
-
-```json
-{
-    "conversation_id": "123456789",
-    "tweets": [
-        {
-            "tweet_id": "123456789",
-            "username": "usuario1"
-        },
-        {
-            "tweet_id": "123456790",
-            "username": "usuario2"
-        }
-    ]
-}
-```
-
-Una conversación puede contener más tweets que los encontrados originalmente mediante la búsqueda.
-
-Por este motivo, la reconstrucción del hilo se realiza como una etapa independiente de la búsqueda.
-
----
-
-# Almacenamiento JSONL
-
-Los datos se almacenan utilizando **JSON Lines (JSONL)**.
-
-Cada línea representa un registro independiente.
-
-Ejemplo:
-
-```text
-{"tweet_id":"1", ...}
-{"tweet_id":"2", ...}
-{"tweet_id":"3", ...}
-```
-
-Esto permite:
-
-* procesar los registros individualmente;
-* agregar nuevos datos sin reconstruir todo el archivo;
-* trabajar con datasets grandes;
-* conservar una estructura sencilla y portable.
-
-Para leer los tweets:
-
-```python
-import json
-
-with open(
-    "data/tweets.jsonl",
-    encoding="utf-8"
-) as file:
-
-    for line in file:
-
-        tweet = json.loads(line)
-
-        print(tweet["username"])
-        print(tweet["text"])
-```
-
----
-
-# Evitar duplicados
-
-La función de almacenamiento comprueba los identificadores existentes antes de agregar nuevos registros.
-
-Para los tweets se utiliza:
-
-```text
-tweet_id
-```
-
-Para las conversaciones se utiliza:
-
-```text
-conversation_id
-```
-
-De esta forma, ejecutar nuevamente una búsqueda no debería agregar registros idénticos al archivo existente.
-
----
-
-# Configuración de cuentas
-
-`twscrape` utiliza cuentas de X para realizar las solicitudes.
-
-Las cuentas se administran mediante la base local de cuentas de `twscrape`.
-
-Las credenciales y datos de autenticación son información privada y **no deben subirse al repositorio**.
-
-Si una cuenta deja de estar disponible temporalmente debido a límites de solicitudes, `twscrape` puede esperar hasta que una cuenta vuelva a estar disponible.
-
-El uso de varias cuentas permite distribuir las solicitudes entre las cuentas configuradas.
-
----
-
-# Instalación
-
-Crear un entorno virtual:
-
-```bash
-python -m venv .venv
-```
-
-Activarlo:
-
-```bash
+git clone https://github.com/juanfrajberg/scraper_implementacion.git
+cd scraper_implementacion
+python3 -m venv .venv
 source .venv/bin/activate
+python -m pip install -e ".[dev,mass]"
 ```
 
-Instalar las dependencias:
+En Windows, la activación es:
+
+```powershell
+.venv\Scripts\activate
+```
+
+### 2. Agregar una cuenta de X
 
 ```bash
-pip install -r requirements.txt
+twscrape --db data/accounts.db add_cookie cuenta_investigacion
 ```
 
----
+Cuando lo solicite, pegar ambas cookies en una sola línea:
 
-# Configuración de twscrape
+```text
+auth_token=VALOR; ct0=VALOR
+```
 
-Las cuentas pueden administrarse utilizando la interfaz de línea de comandos de `twscrape`.
+Las cookies permiten acceder a la sesión. No deben compartirse ni subirse al repositorio.
 
-Para consultar las opciones disponibles:
+### 3. Abrir la interfaz
 
 ```bash
-twscrape --help
+streamlit run app.py
 ```
 
-Para consultar las cuentas configuradas:
+Se abrirá `http://localhost:8501` en el navegador.
+
+### 4. Ejecutar una campaña
+
+1. Elegir una campaña en la barra lateral.
+2. Revisar período, consultas, límite y cuentas activas.
+3. Presionar **Iniciar o reanudar**.
+4. Consultar la pestaña **Progreso**.
+5. Cuando termine la búsqueda, abrir **Hilos** para reconstruir conversaciones.
+6. Crear y descargar los CSV desde **Resultados**.
+
+Cerrar la pestaña del navegador no detiene la descarga. El botón **Detener de forma segura**
+conserva todo lo que ya fue registrado; al reiniciar, los trabajos completos se omiten.
+
+## Campañas preparadas
+
+| Campaña | Período incluido | Consultas |
+|---|---|---|
+| Ventana 3 — Egipto | 06/07/2026–10/07/2026 | Paraguas, eje Egipto y `fifamedia` |
+| Ventana 4 — Suiza | 11/07/2026–14/07/2026 | Paraguas y eje Suiza |
+| Ventana 5 — Inglaterra | 15/07/2026–18/07/2026 | Paraguas y eje Inglaterra |
+
+Las fechas visibles son inclusivas. Internamente se convierten a intervalos semiabiertos exactos,
+por ejemplo `[2026-07-11 00:00, 2026-07-15 00:00)`, en
+`America/Argentina/Buenos_Aires`.
+
+## Archivos locales
+
+Cada campaña se guarda en:
+
+```text
+data/runs/<campaña>/
+├── research.sqlite3
+├── plan.json
+├── thread_plan.json
+├── raw/
+├── raw_threads/
+└── exports/
+    ├── tweets.csv
+    └── threads.csv
+```
+
+Todo `data/` está excluido de Git, incluido `accounts.db`.
+
+## Uso por Terminal
+
+La interfaz utiliza el mismo motor que estos comandos:
 
 ```bash
-twscrape accounts
+x-research validate-campaign \
+  --campaign config/ventana_04_cuartos_suiza_2026.json
+
+x-research collect-campaign \
+  --campaign config/ventana_04_cuartos_suiza_2026.json \
+  --accounts-db data/accounts.db \
+  --database data/runs/ventana_04_cuartos_suiza_2026/research.sqlite3 \
+  --raw-dir data/runs/ventana_04_cuartos_suiza_2026/raw \
+  --auto-refine
 ```
 
-También pueden consultarse las estadísticas:
+Para repartir la campaña entre tres computadoras se usa, respectivamente:
+
+```text
+--shard-count 3 --shard-index 0
+--shard-count 3 --shard-index 1
+--shard-count 3 --shard-index 2
+```
+
+Las bases resultantes pueden combinarse con `x-research merge-db`.
+
+## Comprobar el proyecto
+
+Estas pruebas no se conectan a X:
 
 ```bash
-twscrape stats
+pytest
+x-research validate-campaign --campaign config/ventana_03_octavos_egipto_2026.json
+x-research validate-campaign --campaign config/ventana_04_cuartos_suiza_2026.json
+x-research validate-campaign --campaign config/ventana_05_semifinal_inglaterra_2026.json
 ```
 
-El procedimiento exacto de autenticación depende de la configuración de las cuentas y de los mecanismos de autenticación disponibles en X.
+## Seguridad y alcance
 
----
+- No subir `accounts.db`, cookies, contraseñas o archivos `.env`.
+- No desplegar públicamente la interfaz con credenciales reales.
+- Trabajar únicamente con cuentas autorizadas.
+- Registrar límites, bloqueos y datos faltantes en el informe de investigación.
+- Distinguir los resultados directos del contexto agregado mediante conversaciones.
+- Respetar las condiciones de X y los requisitos éticos e institucionales del proyecto.
 
-# Ejecución
-
-Con el entorno virtual activado:
-
-```bash
-python -m src.main
-```
-
-El programa realiza la búsqueda configurada y muestra información sobre el proceso.
-
-Ejemplo:
-
-```text
-Iniciando cliente...
-Buscando: "Argentina since:2026-07-19 until:2026-07-20"
-Tweets encontrados: 24
-Tweets guardados en: data/tweets.jsonl
-Conversaciones únicas: 24
-Reconstruyendo conversación ...
-...
-Hilos guardados en: data/threads.jsonl
-
-Proceso terminado.
-```
-
----
-
-# Pruebas de reconstrucción de conversaciones
-
-Durante el desarrollo se utiliza un script independiente para comprobar la cantidad de tweets recuperados de una conversación:
-
-```text
-test_thread_info.py
-```
-
-Este script permite probar distintos valores de `limit`.
-
-Por ejemplo:
-
-```text
-limit=50  -> tweets=95
-limit=100 -> tweets=131
-limit=200 -> tweets=222
-limit=300 -> tweets=311
-limit=500 -> tweets=315
-limit=1000 -> tweets=316
-```
-
-Esto permite determinar experimentalmente cuándo `tweet_thread()` deja de devolver nuevos tweets para una conversación determinada.
-
-El script es una herramienta de prueba y no forma parte del pipeline principal.
-
----
-
-# Reproducibilidad
-
-Para facilitar la reproducción del experimento se mantienen separadas:
-
-* la configuración;
-* el código de recolección;
-* los datos recolectados;
-* la documentación.
-
-Las consultas y ventanas temporales utilizadas se encuentran en:
-
-```text
-src/config.py
-```
-
-Los datos obtenidos durante las pruebas se almacenan localmente en:
-
-```text
-data/
-```
-
----
-
-# Privacidad y seguridad
-
-El proyecto trabaja con información pública de X, pero los datos recolectados pueden contener identificadores, nombres de usuario y contenido publicado.
-
-Por este motivo:
-
-* no se deben almacenar credenciales en Git;
-* no se deben publicar cookies;
-* no se deben publicar bases de autenticación;
-* no se deben subir datasets innecesarios;
-* se debe revisar qué información es necesaria para el análisis;
-* se debe considerar la anonimización antes de distribuir los datos;
-* se deben respetar las condiciones de uso de la plataforma y la legislación aplicable.
-
----
-
-# Archivos que no deben subirse
-
-El repositorio no debe contener información privada ni datos generados localmente durante las pruebas.
-
-Entre ellos:
-
-```text
-.env
-accounts.db
-cookies.json
-```
-
-Tampoco deberían subirse los datasets recolectados:
-
-```text
-data/*.jsonl
-data/*.db
-```
-
-El archivo `.gitignore` se utiliza para evitar incluir estos archivos accidentalmente.
-
-El archivo:
-
-```text
-.env.example
-```
-
-puede utilizarse como referencia para documentar las variables necesarias sin incluir valores privados.
-
----
-
-# Estado del proyecto
-
-Actualmente el pipeline permite:
-
-* [x] Configuración de búsquedas
-* [x] Cliente `twscrape`
-* [x] Recolección de tweets
-* [x] Conversión a JSONL
-* [x] Detección de conversaciones
-* [x] Reconstrucción de conversaciones
-* [x] Ordenamiento cronológico de los tweets
-* [x] Prevención de tweets duplicados
-* [x] Prevención de conversaciones duplicadas
-* [x] Uso de múltiples cuentas mediante `twscrape`
-
----
-
-# Posibles extensiones
-
-Una vez establecida la recolección básica pueden implementarse:
-
-## Recolección
-
-* más consultas;
-* más ventanas temporales;
-* recolección por intervalos;
-* recuperación de conversaciones más profundas;
-* manejo de errores y reintentos.
-
-## Análisis
-
-* análisis temporal;
-* análisis de usuarios;
-* análisis de hashtags;
-* análisis de menciones;
-* análisis de respuestas;
-* análisis del contenido textual;
-* clasificación de publicaciones.
-
-## Visualización
-
-Los datos almacenados en JSONL pueden utilizarse posteriormente para generar tablas, estadísticas y visualizaciones sin modificar el proceso de recolección.
-
----
-
-# Documentación
-
-La documentación adicional se encuentra en:
-
-```text
-docs/
-├── metodologia.md
-└── esquema_datos.md
-```
-
-Estos documentos describen la metodología del proyecto y la estructura de los datos utilizados.
+La interfaz no garantiza exhaustividad: X puede limitar, ordenar o bloquear resultados. El sistema
+registra saturación, errores y procedencia para que esas limitaciones sean analizables.

@@ -1,0 +1,23 @@
+{
+  "campaign_id": "ventana_04_cuartos_suiza_2026",
+  "description": "Palabras paraguas y eje Suiza, divididos por día con límites temporales exactos.",
+  "timezone": "America/Argentina/Buenos_Aires",
+  "since": "2026-07-11",
+  "until": "2026-07-15",
+  "search_product": "Latest",
+  "default_window_minutes": 1440,
+  "limit_per_job": 3000,
+  "minimum_window_minutes": 15,
+  "queries": [
+    {
+      "label": "paraguas",
+      "text": "(Albiceleste OR Scaloneta OR \"La Scaloneta\" OR \"Selección argentina\" OR \"Seleccion argentina\" OR AFA OR \"Mundial 2026\" OR \"World Cup 2026\" OR #Albiceleste OR #Scaloneta OR #VamosAgrentina OR #VamosArgentina OR #VARgentina)",
+      "corpus_layer": "core"
+    },
+    {
+      "label": "eje_suiza",
+      "text": "(Albiceleste OR Scaloneta OR \"La Scaloneta\" OR \"Selección argentina\" OR \"Seleccion argentina\" OR AFA OR \"Mundial 2026\" OR \"World Cup 2026\" OR #Albiceleste OR #Scaloneta OR #VamosAgrentina OR #VamosArgentina OR #VARgentina) (VARgentina OR Embolo OR expulsión OR expulsion)",
+      "corpus_layer": "thematic"
+    }
+  ]
+}

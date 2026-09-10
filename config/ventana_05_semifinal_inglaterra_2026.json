@@ -1,0 +1,23 @@
+{
+  "campaign_id": "ventana_05_semifinal_inglaterra_2026",
+  "description": "Palabras paraguas y eje Inglaterra, divididos por día con límites temporales exactos.",
+  "timezone": "America/Argentina/Buenos_Aires",
+  "since": "2026-07-15",
+  "until": "2026-07-19",
+  "search_product": "Latest",
+  "default_window_minutes": 1440,
+  "limit_per_job": 3000,
+  "minimum_window_minutes": 15,
+  "queries": [
+    {
+      "label": "paraguas",
+      "text": "(Albiceleste OR Scaloneta OR \"La Scaloneta\" OR \"Selección argentina\" OR \"Seleccion argentina\" OR AFA OR \"Mundial 2026\" OR \"World Cup 2026\" OR #Albiceleste OR #Scaloneta OR #VamosAgrentina OR #VamosArgentina OR #VARgentina)",
+      "corpus_layer": "core"
+    },
+    {
+      "label": "eje_inglaterra",
+      "text": "(Albiceleste OR Scaloneta OR \"La Scaloneta\" OR \"Selección argentina\" OR \"Seleccion argentina\" OR AFA OR \"Mundial 2026\" OR \"World Cup 2026\" OR #Albiceleste OR #Scaloneta OR #VamosAgrentina OR #VamosArgentina OR #VARgentina) (Malvinas OR \"Las Malvinas son argentinas\" OR Falklands OR Tatcher OR Thatcher)",
+      "corpus_layer": "thematic"
+    }
+  ]
+}
