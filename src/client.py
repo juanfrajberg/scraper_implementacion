@@ -1,6 +1,5 @@
 from twscrape import API
 
-
 DB_PATH = "data/accounts.db"
 
 

@@ -2,17 +2,12 @@ import json
 from collections import Counter
 from pathlib import Path
 
-
 THREADS_FILE = Path("data/threads.jsonl")
 
 
 def load_threads():
     with THREADS_FILE.open(encoding="utf-8") as file:
-        return [
-            json.loads(line)
-            for line in file
-            if line.strip()
-        ]
+        return [json.loads(line) for line in file if line.strip()]
 
 
 def top_threads(threads, limit=10):
@@ -29,10 +24,7 @@ def top_threads(threads, limit=10):
     print("=" * 70)
 
     for i, thread in enumerate(ranking[:limit], 1):
-        print(
-            f"{i:2}. tweets={len(thread['tweets']):4} "
-            f"| id={thread['conversation_id']}"
-        )
+        print(f"{i:2}. tweets={len(thread['tweets']):4} | id={thread['conversation_id']}")
 
 
 def top_root_tweets(threads, limit=10):
@@ -48,18 +40,10 @@ def top_root_tweets(threads, limit=10):
 
         root_id = str(thread["conversation_id"])
 
-        replies = sum(
-            1
-            for tweet in tweets
-            if str(tweet.get("in_reply_to")) == root_id
-        )
+        replies = sum(1 for tweet in tweets if str(tweet.get("in_reply_to")) == root_id)
 
         root = next(
-            (
-                tweet
-                for tweet in tweets
-                if str(tweet["tweet_id"]) == root_id
-            ),
+            (tweet for tweet in tweets if str(tweet["tweet_id"]) == root_id),
             None,
         )
 
@@ -82,11 +66,7 @@ def top_root_tweets(threads, limit=10):
         ranking[:limit],
         1,
     ):
-        print(
-            f"{i:2}. respuestas={replies:5} "
-            f"| id={tweet['tweet_id']} "
-            f"| @{tweet['username']}"
-        )
+        print(f"{i:2}. respuestas={replies:5} | id={tweet['tweet_id']} | @{tweet['username']}")
         print(f"    {tweet['text'][:150]}")
 
 
@@ -111,9 +91,7 @@ def top_participants(threads, limit=10):
         counter.most_common(limit),
         1,
     ):
-        print(
-            f"{i:2}. tweets={count:5} | @{username}"
-        )
+        print(f"{i:2}. tweets={count:5} | @{username}")
 
 
 def orphan_replies(threads, limit=20):
@@ -127,21 +105,13 @@ def orphan_replies(threads, limit=20):
     for thread in threads:
         tweets = thread["tweets"]
 
-        ids = {
-            str(tweet["tweet_id"])
-            for tweet in tweets
-        }
+        ids = {str(tweet["tweet_id"]) for tweet in tweets}
 
         for tweet in tweets:
             parent_id = tweet.get("in_reply_to")
 
-            if (
-                parent_id is not None
-                and str(parent_id) not in ids
-            ):
-                results.append(
-                    (thread["conversation_id"], tweet)
-                )
+            if parent_id is not None and str(parent_id) not in ids:
+                results.append((thread["conversation_id"], tweet))
 
     print()
     print("=" * 70)
@@ -177,22 +147,13 @@ def conversation_participation(threads, limit=10):
     print("=" * 70)
 
     for thread in ranking[:limit]:
-        counter = Counter(
-            tweet["username"]
-            for tweet in thread["tweets"]
-        )
+        counter = Counter(tweet["username"] for tweet in thread["tweets"])
 
         print()
-        print(
-            f"CONVERSACIÓN "
-            f"{thread['conversation_id']} "
-            f"({len(thread['tweets'])} tweets)"
-        )
+        print(f"CONVERSACIÓN {thread['conversation_id']} ({len(thread['tweets'])} tweets)")
 
         for username, count in counter.most_common(5):
-            print(
-                f"  @{username}: {count} tweets"
-            )
+            print(f"  @{username}: {count} tweets")
 
 
 def main():
@@ -203,10 +164,7 @@ def main():
     print("=" * 70)
     print(f"Conversaciones analizadas: {len(threads)}")
 
-    total_tweets = sum(
-        len(thread["tweets"])
-        for thread in threads
-    )
+    total_tweets = sum(len(thread["tweets"]) for thread in threads)
 
     print(f"Tweets analizados: {total_tweets}")
 

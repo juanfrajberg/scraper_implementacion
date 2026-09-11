@@ -3,10 +3,10 @@ import asyncio
 from src.client import create_client
 from src.collector import collect_tweets
 from src.config import (
-    SEARCHES,
-    MAX_TWEETS_PER_SEARCH,
     DATE_FROM,
     DATE_TO,
+    MAX_TWEETS_PER_SEARCH,
+    SEARCHES,
 )
 
 
@@ -18,12 +18,7 @@ async def main():
     total_tweets = 0
 
     for search in SEARCHES:
-
-        query = (
-            f"{search} "
-            f"since:{DATE_FROM} "
-            f"until:{DATE_TO}"
-        )
+        query = f"{search} since:{DATE_FROM} until:{DATE_TO}"
 
         print()
         print("=" * 60)
@@ -38,16 +33,11 @@ async def main():
 
         total_tweets += count
 
-        print(
-            f"Tweets encontrados en esta consulta: {count}"
-        )
+        print(f"Tweets encontrados en esta consulta: {count}")
 
     print()
     print("=" * 60)
-    print(
-        f"Proceso terminado. "
-        f"Tweets encontrados en total: {total_tweets}"
-    )
+    print(f"Proceso terminado. Tweets encontrados en total: {total_tweets}")
     print("=" * 60)
 
 

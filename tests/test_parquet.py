@@ -73,15 +73,9 @@ def test_exports_partitioned_parquet_dataset(tmp_path):
 
     assert report["tweets"] == 1
     assert report["captures"] == 1
-    tweets = pq.read_table(
-        output / "tweets" / "date=2026-07-19" / "part-00000.parquet"
-    )
+    tweets = pq.read_table(output / "tweets" / "date=2026-07-19" / "part-00000.parquet")
     captures = pq.read_table(
-        output
-        / "captures"
-        / "layer=core"
-        / "family=general"
-        / "part-00000.parquet"
+        output / "captures" / "layer=core" / "family=general" / "part-00000.parquet"
     )
     assert tweets.num_rows == 1
     assert captures.num_rows == 1

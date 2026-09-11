@@ -28,9 +28,7 @@ def create_api(accounts_db: str | Path) -> Any:
     try:
         from twscrape import API
     except ImportError as error:
-        raise RuntimeError(
-            "twscrape no está instalado. Ejecutá: pip install '.[dev]'"
-        ) from error
+        raise RuntimeError("twscrape no está instalado. Ejecutá: pip install '.[dev]'") from error
 
     return API(
         str(accounts_db),
@@ -105,13 +103,10 @@ async def _collect_search(
             seed_ids.add(normalized.tweet_id)
             fetched += 1
             is_thread_root = (
-                query.corpus_layer == "thread"
-                and normalized.tweet_id == query.conversation_id
+                query.corpus_layer == "thread" and normalized.tweet_id == query.conversation_id
             )
             capture_kind = (
-                "reply"
-                if query.corpus_layer == "thread" and not is_thread_root
-                else "search"
+                "reply" if query.corpus_layer == "thread" and not is_thread_root else "search"
             )
             root_tweet_id = query.conversation_id or None
             added = store.record_tweet(
@@ -195,10 +190,7 @@ async def _collect_replies(
                     if root_fetched >= experiment.replies_per_tweet:
                         break
                     normalized = normalize_tweet(reply)
-                    if (
-                        normalized.tweet_id == root_id
-                        or normalized.tweet_id in root_seen
-                    ):
+                    if normalized.tweet_id == root_id or normalized.tweet_id in root_seen:
                         duplicates += 1
                         continue
                     root_seen.add(normalized.tweet_id)
@@ -289,9 +281,7 @@ async def collect_experiment(
                 search_duplicates,
                 filtered_outside_window,
                 saturated,
-            ) = await _collect_search(
-                client, store, job_id, experiment, query, raw_path
-            )
+            ) = await _collect_search(client, store, job_id, experiment, query, raw_path)
             if search_fetched < query.minimum_results:
                 raise RuntimeError(
                     "La búsqueda devolvió "
@@ -350,20 +340,32 @@ async def collect_experiment(
                     "filtered_outside_window": filtered_outside_window,
                 }
             )
+        except asyncio.CancelledError:
+            message = "Trabajo interrumpido de forma segura; puede reanudarse."
+            store.add_event(job_id, "warning", message)
+            store.finish_job(
+                job_id,
+                status="failed",
+                fetched_count=None,
+                duplicate_count=duplicates,
+                warning_count=warnings + 1,
+                search_count=None,
+                error_message=message,
+            )
+            raise
         except Exception as error:
             store.add_event(job_id, "error", str(error))
             store.finish_job(
                 job_id,
                 status="failed",
-                fetched_count=fetched,
+                fetched_count=None,
                 duplicate_count=duplicates,
                 warning_count=warnings,
-                search_count=search_fetched,
+                search_count=None,
                 error_message=str(error),
             )
             message = (
-                f"Falló la consulta '{query.label}'. "
-                f"El progreso guardado no se pierde: {error}"
+                f"Falló la consulta '{query.label}'. El progreso guardado no se pierde: {error}"
             )
             reports.append(
                 {

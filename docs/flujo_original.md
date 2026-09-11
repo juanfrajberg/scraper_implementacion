@@ -1,3 +1,9 @@
+# Flujo original basado en JSONL
+
+> Documento histórico. El flujo recomendado y mantenido actualmente es la interfaz descrita en
+> el [README](../README.md). Estos scripts se conservan para reproducir las primeras descargas en
+> formato JSONL, pero no comparten la base SQLite ni el seguimiento de campañas de la interfaz.
+
 # Análisis de conversaciones sobre Argentina en X
 
 Proyecto académico de **recolección y análisis de publicaciones públicas de X (Twitter)** relacionadas con Argentina durante un período determinado.

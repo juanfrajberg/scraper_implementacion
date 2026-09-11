@@ -280,14 +280,11 @@ class ResearchStore:
     def _migrate_columns(self, database: sqlite3.Connection) -> None:
         for table, columns in MIGRATION_COLUMNS.items():
             existing = {
-                row["name"]
-                for row in database.execute(f"PRAGMA table_info('{table}')").fetchall()
+                row["name"] for row in database.execute(f"PRAGMA table_info('{table}')").fetchall()
             }
             for column, definition in columns.items():
                 if column not in existing:
-                    database.execute(
-                        f"ALTER TABLE {table} ADD COLUMN {column} {definition}"
-                    )
+                    database.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
     def prepare_job(
         self,
@@ -633,7 +630,7 @@ class ResearchStore:
         job_id: str,
         *,
         status: str,
-        fetched_count: int,
+        fetched_count: int | None,
         duplicate_count: int,
         warning_count: int,
         search_count: int | None = None,
@@ -666,7 +663,7 @@ class ResearchStore:
                 (
                     status,
                     utc_now(),
-                    fetched_count,
+                    fetched_count if fetched_count is not None else counts["unique_count"],
                     search_count
                     if search_count is not None
                     else max(0, counts["unique_count"] - counts["reply_count"]),
@@ -917,9 +914,7 @@ class ResearchStore:
                                 f"PRAGMA source_db.table_info('{table}')"
                             ).fetchall()
                         }
-                        columns = [
-                            column for column in main_columns if column in source_columns
-                        ]
+                        columns = [column for column in main_columns if column in source_columns]
                         column_list = ", ".join(columns)
                         database.execute(
                             f"INSERT OR IGNORE INTO main.{table} ({column_list}) "
@@ -948,6 +943,9 @@ class ResearchStore:
                             "inserted_rows": database.total_changes - changes_before,
                         }
                     )
+                except Exception:
+                    database.rollback()
+                    raise
                 finally:
                     database.execute("DETACH DATABASE source_db")
 
@@ -957,7 +955,7 @@ class ResearchStore:
         destination = Path(output_path)
         destination.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as database:
-            rows = database.execute(
+            cursor = database.execute(
                 """
                 SELECT
                     t.*,
@@ -967,14 +965,12 @@ class ResearchStore:
                 LEFT JOIN users u ON u.user_id = t.author_id
                 ORDER BY t.created_at, t.tweet_id
                 """
-            ).fetchall()
-
-        if not rows:
-            destination.write_text("", encoding="utf-8")
-            return 0
+            )
+            fields = [description[0] for description in cursor.description]
+            rows = cursor.fetchall()
 
         with destination.open("w", encoding="utf-8", newline="") as file:
-            writer = csv.DictWriter(file, fieldnames=rows[0].keys())
+            writer = csv.DictWriter(file, fieldnames=fields)
             writer.writeheader()
             writer.writerows(dict(row) for row in rows)
         return len(rows)
@@ -1027,9 +1023,7 @@ class ResearchStore:
         for layer in ("core", "thematic"):
             candidates = [row for row in rows if row["source_layer"] == layer]
             candidates.sort(
-                key=lambda row: hashlib.sha256(
-                    f"{seed}:{row['tweet_id']}".encode()
-                ).hexdigest()
+                key=lambda row: hashlib.sha256(f"{seed}:{row['tweet_id']}".encode()).hexdigest()
             )
             selected.extend(candidates[:per_layer])
         selected.sort(key=lambda row: (row["source_layer"], row["created_at"] or ""))
@@ -1123,10 +1117,6 @@ class ResearchStore:
                 ).fetchall()
             ]
 
-        if not records:
-            destination.write_text("", encoding="utf-8")
-            return 0
-
         by_id = {str(record["tweet_id"]): record for record in records}
         depths: dict[str, int] = {}
 
@@ -1150,9 +1140,7 @@ class ResearchStore:
             parent_id = record["reply_to_tweet_id"]
             root_id = str(record["conversation_id"])
             record["thread_depth"] = depth_for(tweet_id)
-            record["parent_in_dataset"] = int(
-                bool(parent_id) and str(parent_id) in by_id
-            )
+            record["parent_in_dataset"] = int(bool(parent_id) and str(parent_id) in by_id)
             record["root_in_dataset"] = int(root_id in by_id)
 
         records.sort(
@@ -1168,8 +1156,7 @@ class ResearchStore:
             writer = csv.DictWriter(file, fieldnames=THREAD_EXPORT_FIELDS)
             writer.writeheader()
             writer.writerows(
-                {field: record.get(field) for field in THREAD_EXPORT_FIELDS}
-                for record in records
+                {field: record.get(field) for field in THREAD_EXPORT_FIELDS} for record in records
             )
         return len(records)
 

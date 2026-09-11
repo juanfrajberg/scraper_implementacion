@@ -22,8 +22,7 @@ class ProcessFiles:
 
 def safe_name(value: str) -> str:
     cleaned = "".join(
-        character if character.isalnum() or character in "-_" else "_"
-        for character in value
+        character if character.isalnum() or character in "-_" else "_" for character in value
     )
     cleaned = "_".join(part for part in cleaned.split("_") if part)
     return cleaned.strip("_-") or "campania"
@@ -108,8 +107,7 @@ def start_process(
         log_handle.close()
 
     files.pid.write_text(
-        json.dumps({"pid": process.pid, "command": command}, ensure_ascii=False, indent=2)
-        + "\n",
+        json.dumps({"pid": process.pid, "command": command}, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
     return process_status(run_id, root)
@@ -122,7 +120,10 @@ def stop_process(run_id: str, root: Path = PROJECT_ROOT) -> bool:
         status["pid_file"].unlink(missing_ok=True)
         return False
     try:
-        os.killpg(pid, signal.SIGINT)
+        if hasattr(os, "killpg"):
+            os.killpg(pid, signal.SIGINT)
+        else:
+            os.kill(pid, signal.SIGTERM)
     except ProcessLookupError:
         status["pid_file"].unlink(missing_ok=True)
         return False
@@ -161,6 +162,10 @@ def account_rows(path: Path) -> list[dict[str, Any]]:
     except sqlite3.Error:
         return []
     return [dict(row) for row in rows]
+
+
+def has_active_account(rows: Sequence[dict[str, Any]]) -> bool:
+    return any(bool(row.get("active")) for row in rows)
 
 
 def job_rows(path: Path) -> list[dict[str, Any]]:

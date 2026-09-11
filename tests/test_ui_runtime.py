@@ -1,7 +1,14 @@
 import sqlite3
 from unittest.mock import patch
 
-from ui.runtime import account_rows, database_counts, process_status, safe_name, stop_process
+from ui.runtime import (
+    account_rows,
+    database_counts,
+    has_active_account,
+    process_status,
+    safe_name,
+    stop_process,
+)
 
 
 def test_safe_name_removes_unsafe_characters():
@@ -29,9 +36,7 @@ def test_stop_process_removes_pid_file(tmp_path):
     pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
     pid_file.parent.mkdir(parents=True)
     pid_file.write_text('{"pid": 123}', encoding="utf-8")
-    with patch("ui.runtime.process_is_running", return_value=True), patch(
-        "ui.runtime.os.killpg"
-    ):
+    with patch("ui.runtime.process_is_running", return_value=True), patch("ui.runtime.os.killpg"):
         assert stop_process("prueba", tmp_path) is True
     assert not pid_file.exists()
 
@@ -40,8 +45,9 @@ def test_stop_process_handles_stale_or_inaccessible_pid(tmp_path):
     pid_file = tmp_path / "data" / "runtime" / "prueba.pid.json"
     pid_file.parent.mkdir(parents=True)
     pid_file.write_text('{"pid": 123}', encoding="utf-8")
-    with patch("ui.runtime.process_is_running", return_value=True), patch(
-        "ui.runtime.os.killpg", side_effect=PermissionError
+    with (
+        patch("ui.runtime.process_is_running", return_value=True),
+        patch("ui.runtime.os.killpg", side_effect=PermissionError),
     ):
         assert stop_process("prueba", tmp_path) is False
     assert not pid_file.exists()
@@ -54,13 +60,12 @@ def test_account_rows_do_not_expose_cookies(tmp_path):
             "CREATE TABLE accounts (username TEXT, active INTEGER, last_used TEXT, "
             "error_msg TEXT, cookies TEXT)"
         )
-        connection.execute(
-            "INSERT INTO accounts VALUES ('cuenta', 1, NULL, NULL, 'secreto')"
-        )
+        connection.execute("INSERT INTO accounts VALUES ('cuenta', 1, NULL, NULL, 'secreto')")
     rows = account_rows(database)
-    assert rows == [
-        {"username": "cuenta", "active": 1, "last_used": None, "error_msg": None}
-    ]
+    assert rows == [{"username": "cuenta", "active": 1, "last_used": None, "error_msg": None}]
+    assert has_active_account(rows)
+    assert not has_active_account([])
+    assert not has_active_account([{"username": "inactiva", "active": 0}])
 
 
 def test_database_counts(tmp_path):

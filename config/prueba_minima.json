@@ -1,0 +1,22 @@
+{
+  "experiment_id": "prueba_minima_argentina",
+  "timezone": "America/Argentina/Buenos_Aires",
+  "search_product": "Latest",
+  "download_replies": false,
+  "reply_source_limit": 0,
+  "replies_per_tweet": 0,
+  "reply_delay_seconds": 0,
+  "queries": [
+    {
+      "label": "argentina_es",
+      "text": "\"Argentina\" lang:es",
+      "since": "2026-07-06",
+      "until": "2026-07-07",
+      "limit": 20,
+      "minimum_results": 0,
+      "query_family": "prueba",
+      "corpus_layer": "core",
+      "minimum_window_minutes": 15
+    }
+  ]
+}

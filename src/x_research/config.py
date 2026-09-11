@@ -58,9 +58,7 @@ def _parse_local_boundary(value: str) -> datetime:
             return boundary
         return datetime.combine(date.fromisoformat(value), time.min)
     except ValueError as error:
-        raise ValueError(
-            "usar YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS sin zona horaria"
-        ) from error
+        raise ValueError("usar YYYY-MM-DD o YYYY-MM-DDTHH:MM:SS sin zona horaria") from error
 
 
 def _required_text(data: dict[str, Any], key: str, context: str) -> str:
@@ -100,15 +98,11 @@ def _parse_query(data: Any, index: int) -> QuerySpec:
         or minimum_results < 0
         or minimum_results > limit
     ):
-        raise ValueError(
-            f"{context}: 'minimum_results' debe estar entre 0 y 'limit'"
-        )
+        raise ValueError(f"{context}: 'minimum_results' debe estar entre 0 y 'limit'")
 
     corpus_layer = data.get("corpus_layer", "core")
     if corpus_layer not in {"core", "thematic", "thread"}:
-        raise ValueError(
-            f"{context}: 'corpus_layer' debe ser core, thematic o thread"
-        )
+        raise ValueError(f"{context}: 'corpus_layer' debe ser core, thematic o thread")
 
     minimum_window_minutes = data.get("minimum_window_minutes", 10)
     if (
@@ -116,9 +110,7 @@ def _parse_query(data: Any, index: int) -> QuerySpec:
         or isinstance(minimum_window_minutes, bool)
         or minimum_window_minutes <= 0
     ):
-        raise ValueError(
-            f"{context}: 'minimum_window_minutes' debe ser un entero positivo"
-        )
+        raise ValueError(f"{context}: 'minimum_window_minutes' debe ser un entero positivo")
 
     label = _required_text(data, "label", context)
     query_family = data.get("query_family", label)
@@ -130,9 +122,7 @@ def _parse_query(data: Any, index: int) -> QuerySpec:
         raise ValueError(f"{context}: 'conversation_id' debe ser un texto")
     conversation_id = conversation_id.strip()
     if corpus_layer == "thread" and not conversation_id:
-        raise ValueError(
-            f"{context}: una consulta de capa thread requiere 'conversation_id'"
-        )
+        raise ValueError(f"{context}: una consulta de capa thread requiere 'conversation_id'")
 
     return QuerySpec(
         label=label,

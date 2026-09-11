@@ -43,9 +43,6 @@ async def reconstruct_thread(
     others.sort(key=lambda tweet: tweet.date)
 
     # El tweet raíz siempre va primero
-    if root is not None:
-        thread = [root] + others
-    else:
-        thread = others
+    thread = [root] + others if root is not None else others
 
     return thread

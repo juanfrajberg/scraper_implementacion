@@ -132,9 +132,7 @@ def _load_override(raw: Any, index: int, query_labels: set[str]) -> WindowOverri
     cleaned = tuple(item.strip() for item in families)
     unknown = set(cleaned) - query_labels
     if unknown:
-        raise ValueError(
-            f"{context}: consultas desconocidas: {', '.join(sorted(unknown))}"
-        )
+        raise ValueError(f"{context}: consultas desconocidas: {', '.join(sorted(unknown))}")
 
     return WindowOverride(
         label=_text(raw, "label", context),
@@ -174,13 +172,9 @@ def load_campaign_config(path: str | Path) -> CampaignConfig:
     if product not in {"Latest", "Top", "Media"}:
         raise ValueError("'search_product' debe ser Latest, Top o Media")
 
-    default_window = _positive_int(
-        raw, "default_window_minutes", "campaña", default=360
-    )
+    default_window = _positive_int(raw, "default_window_minutes", "campaña", default=360)
     limit_per_job = _positive_int(raw, "limit_per_job", "campaña", default=1000)
-    minimum_window = _positive_int(
-        raw, "minimum_window_minutes", "campaña", default=10
-    )
+    minimum_window = _positive_int(raw, "minimum_window_minutes", "campaña", default=10)
 
     raw_queries = raw.get("queries")
     if not isinstance(raw_queries, list) or not raw_queries:
@@ -203,15 +197,12 @@ def load_campaign_config(path: str | Path) -> CampaignConfig:
     if not isinstance(raw_overrides, list):
         raise ValueError("'window_overrides' debe ser una lista")
     overrides = tuple(
-        _load_override(item, index, set(labels))
-        for index, item in enumerate(raw_overrides)
+        _load_override(item, index, set(labels)) for index, item in enumerate(raw_overrides)
     )
     for override in overrides:
         override_start, override_end = override.boundaries()
         if override_start < start or override_end > end:
-            raise ValueError(
-                f"window_overrides '{override.label}' debe estar dentro de la campaña"
-            )
+            raise ValueError(f"window_overrides '{override.label}' debe estar dentro de la campaña")
 
     return CampaignConfig(
         campaign_id=_text(raw, "campaign_id", "campaña"),
@@ -233,20 +224,11 @@ def _local_string(value: datetime) -> str:
 
 
 def _window_label(family: str, start: datetime, end: datetime) -> str:
-    return (
-        f"{family}__{start.strftime('%Y%m%dT%H%M%S')}"
-        f"__{end.strftime('%Y%m%dT%H%M%S')}"
-    )
+    return f"{family}__{start.strftime('%Y%m%dT%H%M%S')}__{end.strftime('%Y%m%dT%H%M%S')}"
 
 
-def _matching_overrides(
-    campaign: CampaignConfig, query_family: str
-) -> tuple[WindowOverride, ...]:
-    return tuple(
-        override
-        for override in campaign.overrides
-        if override.applies_to(query_family)
-    )
+def _matching_overrides(campaign: CampaignConfig, query_family: str) -> tuple[WindowOverride, ...]:
+    return tuple(override for override in campaign.overrides if override.applies_to(query_family))
 
 
 def _next_window_end(
@@ -266,9 +248,7 @@ def _next_window_end(
         if cursor < end:
             future_boundaries.append(end)
 
-    minutes = min(
-        [default_minutes, *(override.window_minutes for override in active)]
-    )
+    minutes = min([default_minutes, *(override.window_minutes for override in active)])
     proposed = cursor + timedelta(minutes=minutes)
     return min(proposed, *future_boundaries)
 
@@ -439,9 +419,7 @@ def select_queries(
     return replace(experiment, queries=tuple(selected))
 
 
-def refine_experiment(
-    experiment: ExperimentConfig, saturated_labels: set[str]
-) -> ExperimentConfig:
+def refine_experiment(experiment: ExperimentConfig, saturated_labels: set[str]) -> ExperimentConfig:
     refined: list[QuerySpec] = []
     for query in experiment.queries:
         if query.label not in saturated_labels:

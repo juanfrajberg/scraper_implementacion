@@ -24,12 +24,12 @@ from .parquet import export_parquet_dataset
 from .storage import ResearchStore
 
 DEFAULT_CONFIG = Path("config/prueba_minima.json")
-DEFAULT_CAMPAIGN = Path("config/campania_mundial_2026.json")
+DEFAULT_CAMPAIGN = Path("config/ventana_03_octavos_egipto_2026.json")
 DEFAULT_ACCOUNTS_DB = Path("data/accounts.db")
 DEFAULT_DATABASE = Path("data/research.sqlite3")
 DEFAULT_RAW_JSONL = Path("data/raw/captures.jsonl")
 DEFAULT_CAMPAIGN_RAW = Path("data/raw/campaign")
-DEFAULT_PLAN = Path("data/plans/campania_mundial_2026.json")
+DEFAULT_PLAN = Path("data/plans/ventana_03_octavos_egipto_2026.json")
 DEFAULT_THREAD_PLAN = Path("data/plans/hilos_mundial_2026.json")
 DEFAULT_CSV = Path("data/exports/tweets.csv")
 DEFAULT_THREADS_CSV = Path("data/exports/threads.csv")
@@ -154,14 +154,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--query-family",
         help="Seleccionar raíces halladas por una familia concreta de consultas",
     )
-    expand_threads.add_argument(
-        "--corpus-layer", default="core", choices=("core", "thematic")
-    )
+    expand_threads.add_argument("--corpus-layer", default="core", choices=("core", "thematic"))
     expand_threads.add_argument("--since", default="2026-06-09")
     expand_threads.add_argument("--until", default="2026-07-22")
-    expand_threads.add_argument(
-        "--timezone", default="America/Argentina/Buenos_Aires"
-    )
+    expand_threads.add_argument("--timezone", default="America/Argentina/Buenos_Aires")
     expand_threads.add_argument("--limit-per-thread", type=int, default=1000)
     expand_threads.add_argument("--minimum-window-minutes", type=int, default=10)
     expand_threads.add_argument("--experiment-id", default="mundial_2026_hilos")
@@ -228,9 +224,7 @@ def build_parser() -> argparse.ArgumentParser:
     external_audit.add_argument("--threads", type=Path, required=True)
     external_audit.add_argument("--output", type=Path, required=True)
     external_audit.add_argument("--target-date", default="2026-07-19")
-    external_audit.add_argument(
-        "--timezone", default="America/Argentina/Buenos_Aires"
-    )
+    external_audit.add_argument("--timezone", default="America/Argentina/Buenos_Aires")
 
     compare_external = subparsers.add_parser(
         "compare-external-search",
@@ -241,9 +235,7 @@ def build_parser() -> argparse.ArgumentParser:
     compare_external.add_argument("--output", type=Path, required=True)
     compare_external.add_argument("--experiment-id", required=True)
     compare_external.add_argument("--target-date", default="2026-07-19")
-    compare_external.add_argument(
-        "--timezone", default="America/Argentina/Buenos_Aires"
-    )
+    compare_external.add_argument("--timezone", default="America/Argentina/Buenos_Aires")
 
     return parser
 
@@ -409,9 +401,7 @@ def main(argv: list[str] | None = None) -> int:
 
         if args.command == "refine-plan":
             experiment = load_config(args.config)
-            saturated = ResearchStore(args.database).saturated_job_labels(
-                experiment.experiment_id
-            )
+            saturated = ResearchStore(args.database).saturated_job_labels(experiment.experiment_id)
             refined = refine_experiment(experiment, saturated)
             if not refined.queries:
                 print("No hay ventanas saturadas que puedan subdividirse.")

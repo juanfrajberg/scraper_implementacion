@@ -1,3 +1,4 @@
+import asyncio
 import sqlite3
 from datetime import UTC, datetime
 from types import SimpleNamespace as Object
@@ -53,6 +54,12 @@ class EmptyAPI:
     async def search(self, query, limit, kv):
         if False:
             yield None
+
+
+class CancelledAPI:
+    async def search(self, query, limit, kv):
+        yield tweet("300")
+        raise asyncio.CancelledError
 
 
 @pytest.mark.asyncio
@@ -122,11 +129,48 @@ async def test_zero_results_marks_job_as_failed(tmp_path):
         )
 
     with sqlite3.connect(database_path) as database:
-        status, error = database.execute(
-            "SELECT status, error_message FROM jobs"
-        ).fetchone()
+        status, error = database.execute("SELECT status, error_message FROM jobs").fetchone()
     assert status == "failed"
     assert "0 resultados" in error
+
+
+@pytest.mark.asyncio
+async def test_interrupted_job_is_marked_failed_and_can_be_resumed(tmp_path):
+    query = QuerySpec(
+        label="interrumpida",
+        text="Argentina",
+        since="2026-07-19",
+        until="2026-07-20",
+        limit=10,
+        minimum_results=0,
+    )
+    config = ExperimentConfig(
+        experiment_id="cancelled",
+        search_product="Latest",
+        download_replies=False,
+        reply_source_limit=0,
+        replies_per_tweet=0,
+        reply_delay_seconds=0,
+        queries=(query,),
+    )
+    database_path = tmp_path / "research.sqlite3"
+
+    with pytest.raises(asyncio.CancelledError):
+        await collect_experiment(
+            config,
+            accounts_db=tmp_path / "accounts.db",
+            database_path=database_path,
+            raw_jsonl=tmp_path / "captures.jsonl",
+            api=CancelledAPI(),
+        )
+
+    with sqlite3.connect(database_path) as database:
+        status, error, fetched, search, unique = database.execute(
+            "SELECT status, error_message, fetched_count, search_count, unique_count FROM jobs"
+        ).fetchone()
+    assert status == "failed"
+    assert "interrumpido" in error
+    assert (fetched, search, unique) == (1, 1, 1)
 
 
 class DuplicateThenUniqueAPI:

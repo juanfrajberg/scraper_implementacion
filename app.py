@@ -11,6 +11,7 @@ from ui.runtime import (
     PROJECT_ROOT,
     account_rows,
     database_counts,
+    has_active_account,
     job_rows,
     process_status,
     read_log,
@@ -65,8 +66,7 @@ def paths_for(campaign_id: str) -> dict[str, Path]:
     }
 
 
-def render_accounts() -> None:
-    rows = account_rows(PROJECT_ROOT / "data" / "accounts.db")
+def render_accounts(rows: list[dict]) -> None:
     if not rows:
         st.warning("No se encontraron cuentas. Agregalas desde la Terminal siguiendo el README.")
         return
@@ -82,8 +82,7 @@ def render_accounts() -> None:
 def render_builder() -> None:
     st.subheader("Crear una campaña")
     st.caption(
-        "La fecha final se interpreta como inclusiva en la pantalla "
-        "y se guarda como límite exacto."
+        "La fecha final se interpreta como inclusiva en la pantalla y se guarda como límite exacto."
     )
     left, right = st.columns(2)
     with left:
@@ -184,9 +183,19 @@ run_paths = paths_for(campaign.campaign_id)
 status = process_status(campaign.campaign_id)
 thread_run_id = f"{campaign.campaign_id}_hilos"
 thread_status = process_status(thread_run_id)
+accounts = account_rows(PROJECT_ROOT / "data" / "accounts.db")
+accounts_ready = has_active_account(accounts)
+current_counts = database_counts(run_paths["database"])
+
+if "T" not in campaign.since and "T" not in campaign.until:
+    first_day = date.fromisoformat(campaign.since)
+    last_day = date.fromisoformat(campaign.until) - timedelta(days=1)
+    period_label = f"{first_day:%d/%m/%Y}–{last_day:%d/%m/%Y} (inclusive)"
+else:
+    period_label = f"{campaign.since} ≤ fecha < {campaign.until}"
 
 st.sidebar.caption(campaign.description or "Sin descripción")
-st.sidebar.write(f"**Período:** {campaign.since} → {campaign.until}")
+st.sidebar.write(f"**Período:** {period_label}")
 st.sidebar.write(f"**Trabajos iniciales:** {metrics['jobs']}")
 st.sidebar.write("**Estado:** " + ("Ejecutándose" if status["running"] else "Detenido"))
 
@@ -202,12 +211,18 @@ with download_tab:
     c3.metric("Límite por trabajo", campaign.limit_per_job)
 
     st.markdown("#### Cuentas disponibles")
-    render_accounts()
+    render_accounts(accounts)
+    if accounts and not accounts_ready:
+        st.warning("No hay cuentas activas. Actualizá sus cookies antes de iniciar la descarga.")
 
     auto_refine = st.checkbox("Subdividir automáticamente si se alcanza el límite", value=True)
     col_start, col_stop = st.columns([1, 1])
     with col_start:
-        if st.button("Iniciar o reanudar", type="primary", disabled=status["running"]):
+        if st.button(
+            "Iniciar o reanudar",
+            type="primary",
+            disabled=status["running"] or not accounts_ready,
+        ):
             arguments = [
                 "collect-campaign",
                 "--campaign",
@@ -231,9 +246,9 @@ with download_tab:
                 st.success("Descarga iniciada. Podés cerrar esta pestaña y volver luego.")
                 st.rerun()
     with col_stop:
-        if st.button(
-            "Detener de forma segura", disabled=not status["running"]
-        ) and stop_process(campaign.campaign_id):
+        if st.button("Detener de forma segura", disabled=not status["running"]) and stop_process(
+            campaign.campaign_id
+        ):
             st.warning("Se solicitó la detención. Los tuits ya registrados se conservan.")
 
     st.caption(f"Datos locales: {run_paths['root'].relative_to(PROJECT_ROOT)}")
@@ -241,7 +256,7 @@ with download_tab:
 with progress_tab:
     st.subheader("Estado de los trabajos")
     rows = job_rows(run_paths["database"])
-    counts = database_counts(run_paths["database"])
+    counts = current_counts
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("Tuits únicos", counts["tweets"])
     m2.metric("Autores", counts["authors"])
@@ -288,6 +303,8 @@ with threads_tab:
             status["running"]
             or thread_status["running"]
             or not run_paths["database"].exists()
+            or current_counts["conversations"] == 0
+            or not accounts_ready
         )
         if st.button("Iniciar o reanudar hilos", type="primary", disabled=disabled):
             arguments = [
@@ -324,19 +341,21 @@ with threads_tab:
                 st.success("Reconstrucción iniciada.")
                 st.rerun()
     with h2:
-        if st.button(
-            "Detener hilos", disabled=not thread_status["running"]
-        ) and stop_process(thread_run_id):
+        if st.button("Detener hilos", disabled=not thread_status["running"]) and stop_process(
+            thread_run_id
+        ):
             st.warning("Se solicitó la detención; lo registrado permanece guardado.")
 
     if status["running"]:
         st.info("Esperá a que termine la descarga principal antes de reconstruir hilos.")
+    elif current_counts["conversations"] == 0:
+        st.info("Todavía no hay conversaciones descargadas para reconstruir.")
     with st.expander("Registro de hilos", expanded=bool(thread_status["running"])):
         st.code(read_log(thread_run_id) or "Todavía no hay mensajes.", language="text")
 
 with results_tab:
     st.subheader("Revisar y exportar")
-    counts = database_counts(run_paths["database"])
+    counts = current_counts
     if not run_paths["database"].exists():
         st.info("Todavía no hay una base para exportar.")
     else:

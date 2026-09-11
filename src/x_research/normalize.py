@@ -89,9 +89,7 @@ def normalize_tweet(tweet: Any, captured_at: datetime | None = None) -> Normaliz
         if (value := _string(getattr(user, "id_str", getattr(user, "id", None))))
     )
     mentioned_usernames = tuple(
-        str(username)
-        for user in mentioned_users
-        if (username := getattr(user, "username", None))
+        str(username) for user in mentioned_users if (username := getattr(user, "username", None))
     )
     links = tuple(
         str(url)

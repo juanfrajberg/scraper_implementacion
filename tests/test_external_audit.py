@@ -38,9 +38,7 @@ def test_audits_search_threads_roots_and_windows(tmp_path):
     threads = tmp_path / "threads.jsonl"
     output = tmp_path / "audit"
     direct_root = _tweet("100", "100", "2026-07-19T15:00:00+00:00")
-    direct_reply = _tweet(
-        "101", "100", "2026-07-19T15:10:00+00:00", parent="100"
-    )
+    direct_reply = _tweet("101", "100", "2026-07-19T15:10:00+00:00", parent="100")
     missing_root_reply = _tweet(
         "201",
         "200",

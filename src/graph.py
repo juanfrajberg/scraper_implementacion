@@ -3,7 +3,6 @@ from pathlib import Path
 
 import networkx as nx
 
-
 THREADS_FILE = Path("data/threads.jsonl")
 GRAPH_FILE = Path("data/reply_graph.graphml")
 FILTERED_GRAPH_FILE = Path("data/reply_graph_filtered.graphml")
@@ -19,9 +18,7 @@ def load_threads(path: Path) -> list[dict]:
     threads = []
 
     if not path.exists():
-        raise FileNotFoundError(
-            f"No existe el archivo: {path}"
-        )
+        raise FileNotFoundError(f"No existe el archivo: {path}")
 
     with path.open("r", encoding="utf-8") as file:
         for line in file:
@@ -118,30 +115,19 @@ def print_summary(
 ):
     """Muestra estadísticas básicas del grafo."""
 
-    total_replies = sum(
-        data["weight"]
-        for _, _, data in graph.edges(data=True)
-    )
+    total_replies = sum(data["weight"] for _, _, data in graph.edges(data=True))
 
     print("=" * 70)
     print("GRAFO DE RESPUESTAS")
     print("=" * 70)
 
-    print(
-        f"Conversaciones: {len(threads)}"
-    )
+    print(f"Conversaciones: {len(threads)}")
 
-    print(
-        f"Cuentas: {graph.number_of_nodes()}"
-    )
+    print(f"Cuentas: {graph.number_of_nodes()}")
 
-    print(
-        f"Conexiones: {graph.number_of_edges()}"
-    )
+    print(f"Conexiones: {graph.number_of_edges()}")
 
-    print(
-        f"Replies representados: {total_replies}"
-    )
+    print(f"Replies representados: {total_replies}")
 
 
 def print_filtered_summary(
@@ -150,31 +136,20 @@ def print_filtered_summary(
 ):
     """Muestra estadísticas del grafo filtrado."""
 
-    total_replies = sum(
-        data["weight"]
-        for _, _, data in graph.edges(data=True)
-    )
+    total_replies = sum(data["weight"] for _, _, data in graph.edges(data=True))
 
     print()
     print("=" * 70)
     print("GRAFO FILTRADO")
     print("=" * 70)
 
-    print(
-        f"Peso mínimo: {min_weight}"
-    )
+    print(f"Peso mínimo: {min_weight}")
 
-    print(
-        f"Cuentas: {graph.number_of_nodes()}"
-    )
+    print(f"Cuentas: {graph.number_of_nodes()}")
 
-    print(
-        f"Conexiones: {graph.number_of_edges()}"
-    )
+    print(f"Conexiones: {graph.number_of_edges()}")
 
-    print(
-        f"Replies representados: {total_replies}"
-    )
+    print(f"Replies representados: {total_replies}")
 
 
 def print_most_connected(
@@ -191,20 +166,14 @@ def print_most_connected(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - CUENTAS MÁS CONECTADAS"
-    )
+    print(f"TOP {limit} - CUENTAS MÁS CONECTADAS")
     print("=" * 70)
 
     for position, (username, degree) in enumerate(
         rankings[:limit],
         start=1,
     ):
-        print(
-            f"{position:2}. "
-            f"conexiones={degree:4} | "
-            f"@{username}"
-        )
+        print(f"{position:2}. conexiones={degree:4} | @{username}")
 
 
 def print_most_replied(
@@ -221,9 +190,7 @@ def print_most_replied(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - CUENTAS MÁS RESPONDIDAS"
-    )
+    print(f"TOP {limit} - CUENTAS MÁS RESPONDIDAS")
     print("=" * 70)
 
     for position, (username, replies) in enumerate(
@@ -233,10 +200,7 @@ def print_most_replied(
         accounts = graph.in_degree(username)
 
         print(
-            f"{position:2}. "
-            f"replies_recibidos={int(replies):5} | "
-            f"cuentas={accounts:4} | "
-            f"@{username}"
+            f"{position:2}. replies_recibidos={int(replies):5} | cuentas={accounts:4} | @{username}"
         )
 
 
@@ -254,9 +218,7 @@ def print_most_replying(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - CUENTAS QUE MÁS RESPONDEN"
-    )
+    print(f"TOP {limit} - CUENTAS QUE MÁS RESPONDEN")
     print("=" * 70)
 
     for position, (username, replies) in enumerate(
@@ -287,20 +249,14 @@ def print_top_relationships(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - RELACIONES DE REPLY"
-    )
+    print(f"TOP {limit} - RELACIONES DE REPLY")
     print("=" * 70)
 
     for position, (source, target, data) in enumerate(
         relationships[:limit],
         start=1,
     ):
-        print(
-            f"{position:2}. "
-            f"replies={data['weight']:5} | "
-            f"@{source} -> @{target}"
-        )
+        print(f"{position:2}. replies={data['weight']:5} | @{source} -> @{target}")
 
 
 def print_top_reciprocal_relationships(
@@ -340,9 +296,7 @@ def print_top_reciprocal_relationships(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - RELACIONES RECÍPROCAS"
-    )
+    print(f"TOP {limit} - RELACIONES RECÍPROCAS")
     print("=" * 70)
 
     for position, (
@@ -427,28 +381,18 @@ def analyze_community(
     Calcula las métricas principales de una comunidad.
     """
 
-    community_graph = graph.subgraph(
-        community_nodes
-    ).copy()
+    community_graph = graph.subgraph(community_nodes).copy()
 
     node_count = community_graph.number_of_nodes()
     edge_count = community_graph.number_of_edges()
 
-    total_replies = sum(
-        data["weight"]
-        for _, _, data in community_graph.edges(data=True)
-    )
+    total_replies = sum(data["weight"] for _, _, data in community_graph.edges(data=True))
 
     # Densidad dirigida.
-    if node_count > 1:
-        density = nx.density(community_graph)
-    else:
-        density = 0.0
+    density = nx.density(community_graph) if node_count > 1 else 0.0
 
     # Reciprocidad.
-    reciprocity = calculate_reciprocity(
-        community_graph
-    )
+    reciprocity = calculate_reciprocity(community_graph)
 
     # Interacciones de cada cuenta:
     # respuestas realizadas + respuestas recibidas.
@@ -465,9 +409,7 @@ def analyze_community(
             weight="weight",
         )
 
-        interactions[username] = int(
-            received + sent
-        )
+        interactions[username] = int(received + sent)
 
     ranking = sorted(
         interactions.items(),
@@ -481,29 +423,15 @@ def analyze_community(
     # Concentración de la comunidad:
     # porcentaje de las interacciones que corresponden
     # a la cuenta principal.
-    if total_replies > 0:
-        concentration = (
-            main_interactions
-            / (total_replies * 2)
-        )
-    else:
-        concentration = 0.0
+    concentration = main_interactions / (total_replies * 2) if total_replies > 0 else 0.0
 
     # Grado promedio ponderado.
-    if node_count > 0:
-        average_degree = (
-            sum(interactions.values())
-            / node_count
-        )
-    else:
-        average_degree = 0.0
+    average_degree = sum(interactions.values()) / node_count if node_count > 0 else 0.0
 
     # Relaciones principales.
     relationships = []
 
-    for source, target, data in community_graph.edges(
-        data=True
-    ):
+    for source, target, data in community_graph.edges(data=True):
         relationships.append(
             {
                 "source": source,
@@ -546,8 +474,7 @@ def analyze_community(
                 "username": username,
                 "interactions": interactions,
             }
-            for username, interactions
-            in ranking[:10]
+            for username, interactions in ranking[:10]
         ],
         "top_relationships": relationships[:10],
     }
@@ -616,90 +543,43 @@ def print_communities(
 
     print()
     print("=" * 70)
-    print(
-        f"TOP {limit} - COMUNIDADES"
-    )
+    print(f"TOP {limit} - COMUNIDADES")
     print("=" * 70)
 
-    print(
-        f"Comunidades detectadas: "
-        f"{len(communities)}"
-    )
+    print(f"Comunidades detectadas: {len(communities)}")
 
     for community in communities[:limit]:
         print()
-        print(
-            f"COMUNIDAD "
-            f"{community['community']}"
-        )
+        print(f"COMUNIDAD {community['community']}")
 
-        print(
-            f"  cuentas="
-            f"{community['accounts']}"
-        )
+        print(f"  cuentas={community['accounts']}")
 
-        print(
-            f"  replies internos="
-            f"{community['replies_internal']}"
-        )
+        print(f"  replies internos={community['replies_internal']}")
 
-        print(
-            f"  conexiones="
-            f"{community['connections']}"
-        )
+        print(f"  conexiones={community['connections']}")
 
-        print(
-            f"  densidad="
-            f"{community['density']:.4f}"
-        )
+        print(f"  densidad={community['density']:.4f}")
 
-        print(
-            f"  reciprocidad="
-            f"{community['reciprocity']:.2%}"
-        )
+        print(f"  reciprocidad={community['reciprocity']:.2%}")
 
-        print(
-            f"  grado promedio="
-            f"{community['average_degree']:.2f}"
-        )
+        print(f"  grado promedio={community['average_degree']:.2f}")
 
-        print(
-            f"  cuenta principal="
-            f"@{community['main_account']}"
-        )
+        print(f"  cuenta principal=@{community['main_account']}")
 
-        print(
-            f"  interacciones principales="
-            f"{community['main_account_interactions']}"
-        )
+        print(f"  interacciones principales={community['main_account_interactions']}")
 
-        print(
-            f"  concentración="
-            f"{community['concentration']:.2%}"
-        )
+        print(f"  concentración={community['concentration']:.2%}")
 
-        print(
-            f"  tipo="
-            f"{community['type']}"
-        )
+        print(f"  tipo={community['type']}")
 
-        print(
-            "  principales cuentas:"
-        )
+        print("  principales cuentas:")
 
         for account in community["top_accounts"]:
-            print(
-                f"    @{account['username']}: "
-                f"{account['interactions']} interacciones"
-            )
+            print(f"    @{account['username']}: {account['interactions']} interacciones")
 
-        print(
-            "  relaciones principales:"
-        )
+        print("  relaciones principales:")
 
-        for relationship in community[
-            "top_relationships"
-        ][:5]:
+        for relationship in community["top_relationships"][:5]:
             print(
                 f"    "
                 f"@{relationship['source']} "
@@ -726,9 +606,7 @@ def save_graph(
     )
 
     print()
-    print(
-        f"Grafo guardado en: {path}"
-    )
+    print(f"Grafo guardado en: {path}")
 
 
 def save_communities(
@@ -754,9 +632,7 @@ def save_communities(
         )
 
     print()
-    print(
-        f"Comunidades guardadas en: {path}"
-    )
+    print(f"Comunidades guardadas en: {path}")
 
 
 def main():
@@ -764,46 +640,30 @@ def main():
     print("ANÁLISIS DEL GRAFO DE RESPUESTAS")
     print("=" * 70)
 
-    threads = load_threads(
-        THREADS_FILE
-    )
+    threads = load_threads(THREADS_FILE)
 
-    print(
-        f"Threads cargados: {len(threads)}"
-    )
+    print(f"Threads cargados: {len(threads)}")
 
     # --------------------------------------------------
     # GRAFO ORIGINAL
     # --------------------------------------------------
 
-    graph = build_reply_graph(
-        threads
-    )
+    graph = build_reply_graph(threads)
 
     print_summary(
         graph,
         threads,
     )
 
-    print_most_connected(
-        graph
-    )
+    print_most_connected(graph)
 
-    print_most_replied(
-        graph
-    )
+    print_most_replied(graph)
 
-    print_most_replying(
-        graph
-    )
+    print_most_replying(graph)
 
-    print_top_relationships(
-        graph
-    )
+    print_top_relationships(graph)
 
-    print_top_reciprocal_relationships(
-        graph
-    )
+    print_top_reciprocal_relationships(graph)
 
     save_graph(
         graph,
@@ -833,13 +693,9 @@ def main():
     # COMUNIDADES
     # --------------------------------------------------
 
-    communities = analyze_communities(
-        filtered_graph
-    )
+    communities = analyze_communities(filtered_graph)
 
-    print_communities(
-        communities
-    )
+    print_communities(communities)
 
     save_communities(
         communities,

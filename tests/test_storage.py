@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 from x_research.config import ExperimentConfig, QuerySpec
 from x_research.models import NormalizedTweet
-from x_research.storage import ResearchStore
+from x_research.storage import THREAD_EXPORT_FIELDS, ResearchStore
 
 
 def sample_tweet(tweet_id: str = "200") -> NormalizedTweet:
@@ -233,6 +233,20 @@ def test_exports_threads_grouped_and_ordered(tmp_path):
     assert rows[0]["capture_kind"] == "search"
     assert rows[1]["capture_kind"] == "reply"
     assert rows[2]["reply_to_tweet_id"] == "101"
+
+
+def test_empty_csv_exports_keep_their_headers(tmp_path):
+    store = ResearchStore(tmp_path / "research.sqlite3")
+    tweets_output = tmp_path / "tweets.csv"
+    threads_output = tmp_path / "threads.csv"
+
+    assert store.export_tweets_csv(tweets_output) == 0
+    assert store.export_threads_csv(threads_output) == 0
+
+    with tweets_output.open(encoding="utf-8", newline="") as file:
+        assert "tweet_id" in next(csv.reader(file))
+    with threads_output.open(encoding="utf-8", newline="") as file:
+        assert next(csv.reader(file)) == list(THREAD_EXPORT_FIELDS)
 
 
 def test_exports_reproducible_annotation_sample(tmp_path):

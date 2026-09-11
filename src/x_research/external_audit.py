@@ -324,13 +324,10 @@ def audit_external_jsonl(
                 "first_is_root": bool(normalized and normalized[0]["tweet_id"] == conversation_id),
                 "reply_tweets": replies,
                 "missing_parent_tweets": missing_parents,
-                "has_direct_search_seed": any(
-                    tweet_id in direct for tweet_id in ids
-                ),
+                "has_direct_search_seed": any(tweet_id in direct for tweet_id in ids),
                 "direct_seed_count": sum(tweet_id in direct for tweet_id in ids),
                 "tweets_in_original_query_day_utc": sum(
-                    _in_window(tweet["_datetime"], query_start, query_end)
-                    for tweet in normalized
+                    _in_window(tweet["_datetime"], query_start, query_end) for tweet in normalized
                 ),
                 "tweets_in_research_day_art": sum(
                     _in_window(tweet["_datetime"], local_start_utc, local_end_utc)
@@ -361,24 +358,18 @@ def audit_external_jsonl(
         conversation_id = canonical["conversation_id"]
         memberships = tweet_conversations.get(tweet_id, set())
         membership = (
-            conversation_id
-            if conversation_id in memberships
-            else next(iter(memberships), "")
+            conversation_id if conversation_id in memberships else next(iter(memberships), "")
         )
         canonical.update(
             {
                 "capture_search": tweet_id in direct,
                 "capture_thread": tweet_id in thread_canonical,
-                "corpus_role": (
-                    "search_return" if tweet_id in direct else "thread_context_only"
-                ),
+                "corpus_role": ("search_return" if tweet_id in direct else "thread_context_only"),
                 "thread_occurrences": thread_occurrences[tweet_id],
                 "thread_conversation_count": len(memberships),
                 "in_original_query_day_utc": _in_window(created_at, query_start, query_end),
                 "in_research_day_art": _in_window(created_at, local_start_utc, local_end_utc),
-                "is_conversation_root": bool(
-                    conversation_id and tweet_id == conversation_id
-                ),
+                "is_conversation_root": bool(conversation_id and tweet_id == conversation_id),
                 "root_status": root_status_by_conversation.get(
                     conversation_id, "conversation_not_expanded"
                 ),
@@ -389,9 +380,7 @@ def audit_external_jsonl(
         )
         clean_rows.append(canonical)
 
-    conversation_rows.sort(
-        key=lambda row: (-row["unique_tweets"], row["conversation_id"])
-    )
+    conversation_rows.sort(key=lambda row: (-row["unique_tweets"], row["conversation_id"]))
     total_conversation_tweets = sum(row["unique_tweets"] for row in conversation_rows)
     cumulative = 0
     concentration_rows: list[dict[str, Any]] = []
@@ -481,16 +470,14 @@ def audit_external_jsonl(
             - len(conversation_ids_seen),
             "thread_tweet_occurrences": sum(thread_occurrences.values()),
             "thread_unique": thread_unique_total,
-            "thread_duplicate_occurrences": sum(thread_occurrences.values())
-            - thread_unique_total,
+            "thread_duplicate_occurrences": sum(thread_occurrences.values()) - thread_unique_total,
             "direct_thread_overlap": len(set(direct) & set(thread_canonical)),
             "union_unique": len(clean_rows),
             "thread_only_unique": len(set(thread_canonical) - set(direct)),
         },
         "temporal": {
             "direct_in_original_query_day_utc": sum(
-                _in_window(tweet["_datetime"], query_start, query_end)
-                for tweet in direct.values()
+                _in_window(tweet["_datetime"], query_start, query_end) for tweet in direct.values()
             ),
             "direct_in_research_day_art": sum(
                 _in_window(tweet["_datetime"], local_start_utc, local_end_utc)
@@ -508,12 +495,8 @@ def audit_external_jsonl(
                 not _in_window(tweet["_datetime"], local_start_utc, local_end_utc)
                 for tweet in thread_canonical.values()
             ),
-            "date_min_utc": min(
-                (row["date"] for row in clean_rows if row["date"]), default=""
-            ),
-            "date_max_utc": max(
-                (row["date"] for row in clean_rows if row["date"]), default=""
-            ),
+            "date_min_utc": min((row["date"] for row in clean_rows if row["date"]), default=""),
+            "date_max_utc": max((row["date"] for row in clean_rows if row["date"]), default=""),
         },
         "content": {
             "direct_mentioning_argentina": sum(
@@ -532,24 +515,18 @@ def audit_external_jsonl(
             "conversations_with_missing_parents": sum(
                 row["missing_parent_tweets"] > 0 for row in conversation_rows
             ),
-            "missing_parent_tweets": sum(
-                row["missing_parent_tweets"] for row in conversation_rows
-            ),
+            "missing_parent_tweets": sum(row["missing_parent_tweets"] for row in conversation_rows),
         },
         "concentration": {
             "largest_conversation_unique_tweets": max(sizes, default=0),
-            "median_conversation_unique_tweets": (
-                sorted(sizes)[len(sizes) // 2] if sizes else 0
-            ),
-            "top_10_share": sum(sorted(sizes, reverse=True)[:10])
-            / total_conversation_tweets
+            "median_conversation_unique_tweets": (sorted(sizes)[len(sizes) // 2] if sizes else 0),
+            "top_10_share": sum(sorted(sizes, reverse=True)[:10]) / total_conversation_tweets
             if total_conversation_tweets
             else 0,
             "top_50_share": sum(sorted(sizes, reverse=True)[:50]) / total_conversation_tweets
             if total_conversation_tweets
             else 0,
-            "top_100_share": sum(sorted(sizes, reverse=True)[:100])
-            / total_conversation_tweets
+            "top_100_share": sum(sorted(sizes, reverse=True)[:100]) / total_conversation_tweets
             if total_conversation_tweets
             else 0,
             "gini_conversation_size": _gini(sizes),
@@ -603,9 +580,7 @@ def audit_external_jsonl(
     _write_csv(destination / "hourly_all_observed.csv", hourly_all_rows, hourly_fields)
     missing_roots = [row for row in conversation_rows if row["root_status"] == "root_missing"]
     _write_csv(destination / "missing_roots.csv", missing_roots, conversation_fields)
-    parquet_written = _write_parquet(
-        destination / "tweets_clean.parquet", clean_rows, TWEET_FIELDS
-    )
+    parquet_written = _write_parquet(destination / "tweets_clean.parquet", clean_rows, TWEET_FIELDS)
     summary["outputs"] = {
         "directory": str(destination),
         "parquet_written": parquet_written,

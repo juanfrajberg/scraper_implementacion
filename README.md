@@ -55,6 +55,10 @@ auth_token=VALOR; ct0=VALOR
 
 Las cookies permiten acceder a la sesión. No deben compartirse ni subirse al repositorio.
 
+Si una cuenta aparece como **Inactiva** o muestra `Could not authenticate you`, repetí el mismo
+comando con cookies nuevas y el mismo nombre. `twscrape` actualizará esa cuenta sin crear un
+duplicado.
+
 ### 3. Abrir la interfaz
 
 ```bash
@@ -137,6 +141,8 @@ Estas pruebas no se conectan a X:
 
 ```bash
 pytest
+x-research validate-config
+x-research validate-campaign
 x-research validate-campaign --campaign config/ventana_03_octavos_egipto_2026.json
 x-research validate-campaign --campaign config/ventana_04_cuartos_suiza_2026.json
 x-research validate-campaign --campaign config/ventana_05_semifinal_inglaterra_2026.json
